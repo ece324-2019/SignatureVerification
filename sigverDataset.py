@@ -2,13 +2,20 @@ import os
 import torch
 from PIL import Image
 
+import argparse
+from time import time
+import math
+import numpy as np
+import pandas as pd
+import random
+
 class SiameseNetworkDataset():
 
-    def __init__(self, training_csv=None, training_dir=None, transform=None):
+    def __init__(self, csv=None, dir=None, transform=None):
         # used to prepare the labels and images path
-        self.training_df = pd.read_csv(training_csv)
+        self.training_df = pd.read_csv(csv)
         self.training_df.columns = ["image1", "image2", "label"]
-        self.training_dir = training_dir
+        self.training_dir = dir
         self.transform = transform
 
     def __getitem__(self, index):
