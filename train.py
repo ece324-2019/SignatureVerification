@@ -40,24 +40,18 @@ num = []
 dataset_name = []
 random.seed(seed)
 
-for i in range(1, num_of_names + 1):
-    iter_dir.append(["/Users/yizezhao/PycharmProjects/ece324/sigver/signatures/name_" + str(i) + "/0",
-                     "/Users/yizezhao/PycharmProjects/ece324/sigver/signatures/name_" + str(i) + "/1"])
-    num.append(i)
-    dataset_name.append(["name_" + str(i) + "_auth", "name_" + str(i) + "_forg"])
-    print(iter_dir[i-1])
 
-print(num)
-random.shuffle(num)
-print(num)
-print(dataset_name)
-'''
-    after shuffle, name 1-40: train     41-50: validation       51-55: train
-'''
+trainning_dir = "signature/train"
+trainning_csv = "signature/train_data.csv"
+
+valid_dir = "signature/valid"
+valid_csv = "signature/valid_data.csv"
+
+test_dir = "signature/test"
+test_csv = "signature/test_data.csv"
 
 
-print("lol")
-print(iter_dir[2][1])
 
-for j in num:
-    for i in [0, 1]:
+
+
+

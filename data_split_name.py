@@ -13,10 +13,17 @@ target_dir = []
 forg_target_dir = []
 auth_target_dir = []
 
-#create base directory
-os.mkdir("/Users/yizezhao/PycharmProjects/ece324/sigver/signatures/train")
-os.mkdir("/Users/yizezhao/PycharmProjects/ece324/sigver/signatures/valid")
-os.mkdir("/Users/yizezhao/PycharmProjects/ece324/sigver/signatures/test")
+# #create base directory
+# os.mkdir("/Users/yizezhao/PycharmProjects/ece324/sigver/signatures/train")
+# os.mkdir("/Users/yizezhao/PycharmProjects/ece324/sigver/signatures/valid")
+# os.mkdir("/Users/yizezhao/PycharmProjects/ece324/sigver/signatures/test")
+
+splitted_train_auth = []
+splitted_train_forg = []
+splitted_valid_auth = []
+splitted_valid_forg = []
+splitted_test_auth = []
+splitted_test_forg = []
 
 
 
@@ -32,7 +39,7 @@ for i in range(1, 56):
         forg_target_dir.append(
             "/Users/yizezhao/PycharmProjects/ece324/sigver/signatures/train/name_" + str(i) + "_forg")
     print(forg_target_dir[i-1])
-    os.mkdir(forg_target_dir[i-1])
+    #os.mkdir(forg_target_dir[i-1])
 
 
 
@@ -45,7 +52,7 @@ with open('forg_path.txt', 'r') as forg_path:
         dest = forg_target_dir[int(name.group(1))-1]
         print(line)
         print(dest)
-        shutil.move(line, dest)
+        #shutil.move(line, dest)
 
 
 
@@ -60,7 +67,7 @@ for i in range(1, num_of_names + 1):
     else:
         auth_target_dir.append(
             "/Users/yizezhao/PycharmProjects/ece324/sigver/signatures/train/name_" + str(i) + "_auth")
-    os.mkdir(auth_target_dir[i-1])
+    #os.mkdir(auth_target_dir[i-1])
     print(auth_target_dir)
 
 with open('auth_path.txt', 'r') as auth_path:
@@ -72,4 +79,4 @@ with open('auth_path.txt', 'r') as auth_path:
         dest = auth_target_dir[int(name.group(1))-1]
         print(line)
         print(dest)
-        shutil.move(line, dest)
+        #shutil.move(line, dest)
