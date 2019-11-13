@@ -3,20 +3,24 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import copy
 
+
 # first convert all rgb images to grayscale images
+def rgb2gray(input_path):
+    gray = Image.open(input_path).convert('LA')
+    gray_np = np.array(gray)
+    return gray_np
+
+
 # gray = Image.open('original_1_1.png').convert('LA')
 # plt.imshow(gray)
 # plt.show()
 # gray_np = np.array(gray)
-
-
 # print(gray_np)
 # print(gray_np.shape)
 
 
 # then convert all grayscale images to partial-binary images
 def gray2bi(img, threshold):
-
     partial_bi = []
     for h in range(img.shape[0]):
         new_h = []
@@ -78,8 +82,7 @@ def cal_curv(img):
 # np.savetxt('curvature.csv', curvature, delimiter=',')
 
 
-
-def img_cutter(img, n, m, out_path): #n-horizontalcuts, m-verticalcuts
+def img_cutter(img, n, m, path_prefix):  # n-horizontalcuts, m-verticalcuts
     # first get the tot num of black pixels in the img
     img_ceil = np.ceil(img)
     sum = np.sum(img_ceil)
@@ -97,10 +100,10 @@ def img_cutter(img, n, m, out_path): #n-horizontalcuts, m-verticalcuts
             print('pix_counter: ', pix_counter)
         if n_counter == n:
             break
-    print('sum: ', sum)
-    print('n_sub_goal: ', n_sub_goal)
-    print('n_counter: ', n_counter)
-    print('n_idx_list: ', n_idx_list)
+    # print('sum: ', sum)
+    # print('n_sub_goal: ', n_sub_goal)
+    # print('n_counter: ', n_counter)
+    # print('n_idx_list: ', n_idx_list)
 
     img_ceil_tp = np.transpose(img_ceil)
     pix_counter = 0
@@ -114,10 +117,10 @@ def img_cutter(img, n, m, out_path): #n-horizontalcuts, m-verticalcuts
             print('pix_counter: ', pix_counter)
         if m_counter == m:
             break
-    print('sum: ', sum)
-    print('m_sub_goal: ', m_sub_goal)
-    print('m_counter: ', m_counter)
-    print('m_idx_list: ', m_idx_list)
+    # print('sum: ', sum)
+    # print('m_sub_goal: ', m_sub_goal)
+    # print('m_counter: ', m_counter)
+    # print('m_idx_list: ', m_idx_list)
 
     n_counter = 1
     m_counter = 1
@@ -125,7 +128,7 @@ def img_cutter(img, n, m, out_path): #n-horizontalcuts, m-verticalcuts
     m_idx_list.append(img.shape[1])
     for i in range(len(n_idx_list)):
         for j in range(len(m_idx_list)):
-            path = out_path + '_cut_%d_%d.png' % (i, j)
+            out_path = path_prefix + '_%d_%d.png' % (i, j)
             if i == 0:
                 prev_n = 0
             else:
@@ -137,17 +140,74 @@ def img_cutter(img, n, m, out_path): #n-horizontalcuts, m-verticalcuts
             this_n = n_idx_list[i]
             this_m = m_idx_list[j]
             img_crop = img[prev_n:this_n, prev_m:this_m]
-            plt.imsave(path, img_crop, cmap=plt.get_cmap('gray'))
+            plt.imsave(out_path, img_crop, cmap=plt.get_cmap('gray'))
 
-def gray_bi_cut(input_image, name_prefix, out_path,  num_horizontal_cut, num_vertical_cut):
-    gray = Image.open(input_image).convert('LA')
+
+def img12_cutter(img, n, m, path_prefix_list):  # n-horizontalcuts, m-verticalcuts
+    # first get the tot num of black pixels in the img
+    img_ceil = np.ceil(img)
+    sum = np.sum(img_ceil)
+    n_sub_goal = sum / n
+    m_sub_goal = sum / m
+
+    pix_counter = 0
+    n_counter = 1
+    n_idx_list = []
+    for i in range(img_ceil.shape[0]):
+        pix_counter += np.sum(img_ceil[i])
+        if pix_counter >= (n_counter * n_sub_goal):
+            n_idx_list.append(i)
+            n_counter += 1
+        if n_counter == n:
+            break
+
+    img_ceil_tp = np.transpose(img_ceil)
+    pix_counter = 0
+    m_counter = 1
+    m_idx_list = []
+    for i in range(img_ceil_tp.shape[0]):
+        pix_counter += np.sum(img_ceil_tp[i])
+        if pix_counter >= (m_counter * m_sub_goal):
+            m_idx_list.append(i)
+            m_counter += 1
+        if m_counter == m:
+            break
+
+    n_idx_list.append(img.shape[0])
+    m_idx_list.append(img.shape[1])
+
+    cropped = []
+    for i in range(len(n_idx_list)):
+        row = []
+        for j in range(len(m_idx_list)):
+            if i == 0:
+                prev_n = 0
+            else:
+                prev_n = n_idx_list[i - 1]
+            if j == 0:
+                prev_m = 0
+            else:
+                prev_m = m_idx_list[j - 1]
+            this_n = n_idx_list[i]
+            this_m = m_idx_list[j]
+            img_crop = img[prev_n:this_n, prev_m:this_m]
+            row.append(img_crop)
+        cropped.append(row)
+
+    for i in range(n):
+        for j in range(m):
+            out_path = path_prefix_list[i*m+j] + '_%d_%d.png' % (i, j)
+            plt.imsave(out_path, cropped[i][j], cmap=plt.get_cmap('gray'))
+
+
+def gray_bi_cut(input_path, path_prefix_list, num_horizontal_cut, num_vertical_cut):
+    gray = Image.open(input_path).convert('LA')
     # plt.imshow(gray)
     # plt.show()
     gray_np = np.array(gray)
     partial_bi = gray2bi(gray_np, threshold=0.88)
-    partial_bi = 1 - partial_bi #stocks to 1 and backgraound to 0
-    img_cutter(partial_bi, num_horizontal_cut, num_vertical_cut, out_path)
-
+    partial_bi = 1 - partial_bi  # strokes to 1 and background to 0
+    img12_cutter(partial_bi, num_horizontal_cut, num_vertical_cut, path_prefix_list)
 
 # path = 'original_1_1_bi'
 # img_cutter(partial_bi, 4, 6, out_path=path)
