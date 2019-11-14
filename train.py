@@ -44,7 +44,7 @@ def triplet_train(args, sigVerNet, dataloader):
     iteration_number = 0
 
     optimizer = optim.RMSprop(sigVerNet.parameters(), lr=1e-4, alpha=0.99, eps=1e-8, weight_decay=0.0005, momentum=0.9)
-    criterion = TripletLoss()
+    criterion = ContrastLoss()
 
     for epoch in range(0, args.epochs):
         for i, data in enumerate(dataloader, 0):

@@ -1,13 +1,13 @@
 import torch
 import torch.nn.functional as F
 
-class TripletLoss(torch.nn.Module):
+class ContrastLoss(torch.nn.Module):
     """
     http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf
     """
 
     def __init__(self, margin=2.0):
-        super(TripletLoss, self).__init__()
+        super(ContrastLoss, self).__init__()
         self.margin = margin
 
     def forward(self, output1, output2, label):
