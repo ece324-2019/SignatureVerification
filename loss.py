@@ -17,3 +17,6 @@ class ContrastLoss(torch.nn.Module):
 
 
         return loss_contrastive
+
+
+class TripletLoss(torch.nn.Module):

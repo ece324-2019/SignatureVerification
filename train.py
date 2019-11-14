@@ -26,7 +26,7 @@ import matplotlib.pyplot as plt
 from data_prep_lib import *
 from sigverDataset import *
 from helpers import *
-from triplet_loss import *
+from loss import *
 from models import *
 
 '''
@@ -38,7 +38,7 @@ from models import *
 '''
 
 
-def triplet_train(args, sigVerNet, dataloader):
+def baseline_train(args, sigVerNet, dataloader):
     counter = []
     loss_history = []
     iteration_number = 0
@@ -132,7 +132,7 @@ def main():
 
 
     sigVerNet = SiameseNetwork()
-    net_after = triplet_train(args, sigVerNet, train_dataloader)
+    net_after = baseline_train(args, sigVerNet, train_dataloader)
 
 
 
