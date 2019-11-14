@@ -211,3 +211,11 @@ def gray_bi_cut(input_path, path_prefix_list, num_horizontal_cut, num_vertical_c
 
 # path = 'original_1_1_bi'
 # img_cutter(partial_bi, 4, 6, out_path=path)
+
+
+def gray_bi(input_path):
+    gray = Image.open(input_path).convert('LA')
+    gray_np = np.array(gray)
+    partial_bi = gray2bi(gray_np, threshold=0.88)
+    partial_bi = 1 - partial_bi
+    plt.imsave(input_path, partial_bi, cmap=plt.get_cmap('gray'))
