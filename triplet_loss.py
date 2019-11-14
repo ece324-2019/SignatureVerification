@@ -1,14 +1,13 @@
 import torch
 import torch.nn.functional as F
 
-class ContrastiveLoss(torch.nn.Module):
+class TripletLoss(torch.nn.Module):
     """
-    Contrastive loss function.
-    Based on: http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf
+    http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf
     """
 
     def __init__(self, margin=2.0):
-        super(ContrastiveLoss, self).__init__()
+        super(TripletLoss, self).__init__()
         self.margin = margin
 
     def forward(self, output1, output2, label):
