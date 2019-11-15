@@ -127,7 +127,7 @@ def main():
 
     example_batch = next(dataiter)
     concatenated = torch.cat((example_batch[0], example_batch[1]), 0)
-    #imshow(torchvision.utils.make_grid(concatenated))
+    imshow(torchvision.utils.make_grid(concatenated))
     print(example_batch[2].numpy())
 
 
