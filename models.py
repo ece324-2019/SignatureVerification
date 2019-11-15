@@ -105,5 +105,4 @@ class TripletNetwork(nn.Module):
         # output for negative
         output3 = self.forward_once(input3)
 
-
-        return output1, output2
+        return output1, output2, output3  #CALLER: output = triplet_loss(anchor, positive, negative)
