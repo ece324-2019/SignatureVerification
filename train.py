@@ -38,7 +38,7 @@ from models import *
 '''
 
 
-def baseline_train(args, sigVerNet, dataloader):
+def baseline_train(args, sigVerNet, dataloader, eval_dataloader):
     counter = []
     loss_history = []
     iteration_number = 0
@@ -57,21 +57,50 @@ def baseline_train(args, sigVerNet, dataloader):
             loss_contrastive.backward()
             optimizer.step()
             #if i % 50 == 0:
-            print("Epoch number {}\n Current loss {}\n".format(epoch, loss_contrastive.item()))
+            print("Epoch number {} batch number {}\n Current loss {}".format(epoch+1, i+1, loss_contrastive.item()))
+            if i % 30 == 0:
+                train_acc = eval_baseline(args, sigVerNet, eval_dataloader)
+                print(" training accuracy {}\n".format(train_acc))
+
             iteration_number += 10
             counter.append(iteration_number)
             loss_history.append(loss_contrastive.item())
+
     return sigVerNet
 
+
+def eval_baseline(args, model, dataloader):
+    tot_num = 0
+    corr_num = 0
+
+    for i, data in enumerate(dataloader, 0):
+        img0, img1, label = data
+        output1, output2 = model(img0, img1)
+        euclidean_distance = F.pairwise_distance(output1, output2)
+
+        predictions = []
+        for j in range(output1.shape[0]):
+            if euclidean_distance[j] > args.baseline_margin:
+                predictions.append(1)
+            else:
+                predictions.append(0)
+
+        for j in range(len(predictions)):
+            if predictions[j] == label[j]:
+                tot_num += 1
+                corr_num += 1
+            else:
+                tot_num += 1
+    return float(corr_num)/tot_num
 
 
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--batch_size', type=int, default = 4)
+    parser.add_argument('--batch_size', type=int, default=5)
     parser.add_argument('--valid_size', type=int, default=4)
     parser.add_argument('--split_coefficient', type=int, default=0.2)
-    parser.add_argument('--lr', type=float, default = 0.01)
+    parser.add_argument('--lr', type=float, default = 0.1)
     parser.add_argument('--epochs', type=int, default=1)
     parser.add_argument('--loss_type', choices=['mse', 'ce'], default='ce')
     parser.add_argument('--hidden_size', type=int, default=32)
@@ -79,20 +108,25 @@ def main():
     parser.add_argument('--if_batch', type=bool, default=False)
     parser.add_argument('--num_kernel', type=int, default=30)
     parser.add_argument('--model_type', choices=['small', 'test', 'best', 'best_small'], default='test')
+    parser.add_argument('--baseline_margin', type=int, default=2)
     args = parser.parse_args()
 
     num_of_names = 55
     data_base_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
 
 
-
-    train_dir = "/Users/yizezhao/PycharmProjects/ece324/sigver"
+    train_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
+    train_dir = "D:/1_Study/EngSci_Year3/ECE324_SigVer_project"
     train_csv = "train_paried_list.csv"
+    train_csv = "921_train_paried_list.csv"
+    eval_csv = "921_train_acc_list.csv"
 
-    valid_dir = "/Users/yizezhao/PycharmProjects/ece324/sigver"
+    valid_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
+    valid_dir = "D:/1_Study/EngSci_Year3/ECE324_SigVer_project"
     valid_csv = "valid_paried_list.csv"
 
-    test_dir = "/Users/yizezhao/PycharmProjects/ece324/sigver"
+    test_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
+    test_dir = "D:/1_Study/EngSci_Year3/ECE324_SigVer_project"
     test_csv = "test_paried_list.csv"
 
     #define transformer
@@ -108,6 +142,10 @@ def main():
     train_dataloader = DataLoader(siamese_dataset,
                             shuffle=True,
                             batch_size=args.batch_size)
+
+    eval_dataset = SiameseNetworkDataset(csv=eval_csv, dir=train_dir,
+                                         transform=sig_transformations)
+    eval_dataloader = DataLoader(eval_dataset, shuffle=True, batch_size=102)
 
     valid_dataset = SiameseNetworkDataset(csv=valid_csv, dir=valid_dir,
                                             transform=sig_transformations)
@@ -132,7 +170,7 @@ def main():
 
 
     sigVerNet = SiameseNetwork()
-    net_after = baseline_train(args, sigVerNet, train_dataloader)
+    net_after = baseline_train(args, sigVerNet, train_dataloader, eval_dataloader)
 
 
 
