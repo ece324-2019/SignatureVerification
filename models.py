@@ -7,12 +7,12 @@ class SiameseNetwork(nn.Module):
         # Setting up the Sequential of CNN Layers
         self.cnn1 = nn.Sequential(
 
-            nn.Conv2d(1, 96, kernel_size=11, stride=1),
+            nn.Conv2d(1, 96, kernel_size=3, stride=1),
             nn.ReLU(inplace=True),
             nn.LocalResponseNorm(5, alpha=0.0001, beta=0.75, k=2),
             nn.MaxPool2d(3, stride=2),
 
-            nn.Conv2d(96, 256, kernel_size=5, stride=1, padding=2),
+            nn.Conv2d(96, 256, kernel_size=3, stride=1, padding=2),
             nn.ReLU(inplace=True),
             nn.LocalResponseNorm(5, alpha=0.0001, beta=0.75, k=2),
             nn.MaxPool2d(3, stride=2),
@@ -28,7 +28,7 @@ class SiameseNetwork(nn.Module):
 
         # Defining the fully connected layers
         self.fc1 = nn.Sequential(
-            nn.Linear(30976, 1024),
+            nn.Linear(36864, 1024),
             nn.ReLU(inplace=True),
             nn.Dropout2d(p=0.5),
 
