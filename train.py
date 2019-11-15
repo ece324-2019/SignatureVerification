@@ -43,7 +43,8 @@ def baseline_train(args, sigVerNet, dataloader, eval_dataloader):
     loss_history = []
     iteration_number = 0
 
-    optimizer = optim.RMSprop(sigVerNet.parameters(), lr=1e-4, alpha=0.99, eps=1e-8, weight_decay=0.0005, momentum=0.9)
+    # optimizer = optim.RMSprop(sigVerNet.parameters(), lr=args.lr, alpha=0.99, eps=1e-8, weight_decay=0.0005, momentum=0.9)
+    optimizer = optim.SGD(sigVerNet.parameters(), lr=args.lr)
     criterion = ContrastLoss()
 
     for epoch in range(0, args.epochs):
@@ -79,12 +80,13 @@ def eval_baseline(args, model, dataloader):
             output1, output2 = model(img0, img1)
             euclidean_distance = F.pairwise_distance(output1, output2)
             predictions = []
+            print("distance: ", euclidean_distance)
             for j in range(output1.shape[0]):
                 if euclidean_distance[j] > args.baseline_margin:
                     predictions.append(1)
                 else:
                     predictions.append(0)
-
+            print("predictions: ", predictions)
             for j in range(len(predictions)):
                 if predictions[j] == label[j]:
                     tot_num += 1
@@ -100,7 +102,7 @@ def main():
     parser.add_argument('--batch_size', type=int, default=5)
     parser.add_argument('--valid_size', type=int, default=4)
     parser.add_argument('--split_coefficient', type=int, default=0.2)
-    parser.add_argument('--lr', type=float, default = 0.01)
+    parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--loss_type', choices=['mse', 'ce'], default='ce')
     parser.add_argument('--hidden_size', type=int, default=32)
@@ -108,7 +110,7 @@ def main():
     parser.add_argument('--if_batch', type=bool, default=False)
     parser.add_argument('--num_kernel', type=int, default=30)
     parser.add_argument('--model_type', choices=['small', 'test', 'best', 'best_small'], default='test')
-    parser.add_argument('--baseline_margin', type=float, default=1)
+    parser.add_argument('--baseline_margin', type=float, default=0.007)
     args = parser.parse_args()
 
     num_of_names = 55
@@ -116,7 +118,7 @@ def main():
 
 
     train_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
-    #train_dir = "D:/1_Study/EngSci_Year3/ECE324_SigVer_project"
+    train_dir = "D:/1_Study/EngSci_Year3/ECE324_SigVer_project"
     train_csv = "train_paried_list.csv"
     train_csv = "20_overfit_list.csv"
     eval_csv = "20_overfit_list.csv"
@@ -145,7 +147,7 @@ def main():
 
     eval_dataset = SiameseNetworkDataset(csv=eval_csv, dir=train_dir,
                                          transform=sig_transformations)
-    eval_dataloader = DataLoader(eval_dataset, shuffle=True, batch_size=102)
+    eval_dataloader = DataLoader(eval_dataset, shuffle=True)
 
     valid_dataset = SiameseNetworkDataset(csv=valid_csv, dir=valid_dir,
                                             transform=sig_transformations)
