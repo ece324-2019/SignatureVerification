@@ -16,6 +16,18 @@ import re
     iterate all images, figure out the name number and stored in a seperate
 '''
 
+'''
+command for getting smaller dataset: 
+(base) Yizes-MacBook-Pro-2:SignatureVerification yizezhao$ awk 'NR % 4 == 0' train_paried_list.csv > 50k_train_paried_list.csv
+(base) Yizes-MacBook-Pro-2:SignatureVerification yizezhao$ vim 50k_train_paried_list.csv 
+(base) Yizes-MacBook-Pro-2:SignatureVerification yizezhao$ awk 'NR % 4 == 0' valid_paried_list.csv > 50k_valid_paried_list.csv
+(base) Yizes-MacBook-Pro-2:SignatureVerification yizezhao$ awk 'NR % 4 == 0' test_paried_list.csv > 50k_test_paried_list.csv
+
+(base) Yizes-MacBook-Pro-2:SignatureVerification yizezhao$ awk 'NR % 50 == 0' train_paried_list.csv > small_train_paried_list.csv
+(base) Yizes-MacBook-Pro-2:SignatureVerification yizezhao$ head -921 small_train_paried_list.csv > 921_train_paried_list.csv
+
+'''
+
 base_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
 train_auth_path = base_dir + 'splitted_train_auth.txt'
 train_forg_path = base_dir + 'splitted_train_forg.txt'
