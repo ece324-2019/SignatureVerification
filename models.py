@@ -109,7 +109,7 @@ class TripletNetwork(nn.Module):
         # output for negative
         output3 = self.forward_once(input3)
 
-        return output1, output2, output3  #CALLER: output = triplet_loss(anchor, positive, negative)
+        return output1, output2, output3  #CALLER: triplet_loss = nn.TripletMarginLoss(margin=1.0, p=2)
 
 
 class VGG_SiameseNet(nn.Module):
@@ -181,6 +181,3 @@ class VGG_SiameseNet(nn.Module):
         # forward pass of input 2
         output2 = self.forward_once(input2)
         return output1, output2
-
-
-test = VGG_SiameseNet()

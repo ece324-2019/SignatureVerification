@@ -40,3 +40,38 @@ class SiameseNetworkDataset():
         return len(self.training_df)
 
 
+class TripletDataset():
+
+
+    def __init__(self, csv=None, dir=None, transform=None):
+        # used to prepare the labels and images path
+        self.training_df = pd.read_csv(csv)
+        self.training_df.columns = ["anchor", "pos", "neg"]
+        self.training_dir = dir
+        self.transform = transform
+
+    def __getitem__(self, index):
+        # getting the image path
+        anchor_path = os.path.join(self.training_dir, self.training_df.iat[index, 0])
+        pos_path = os.path.join(self.training_dir, self.training_df.iat[index, 1])
+        neg_path = os.path.join(self.training_dir, self.training_df.iat[index, 2])
+
+        # Loading the image
+        anchor = Image.open(anchor_path)
+        pos = Image.open(pos_path)
+        neg = Image.open(neg_path)
+
+        anchor = anchor.convert("L")
+        pos = pos.convert("L")
+        neg = neg.convert("L")
+
+        # Apply image transformations
+        if self.transform is not None:
+            anchor = self.transform(anchor)
+            pos = self.transform(pos)
+            neg = self.transform(neg)
+
+        return anchor, pos, neg
+
+    def __len__(self):
+        return len(self.training_df)
