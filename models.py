@@ -127,7 +127,7 @@ class VGG_SiameseNet(nn.Module):
         self.vgg16.features = nn.Sequential(*features2)
         # features3 = list(self.vgg16.avgpool.children())[:-1]
         # self.vgg16.avgpool = nn.Sequential(*features3)
-        # print(self.vgg16)
+
 
         # Setting up the Sequential of CNN Layers
         self.cnn1 = nn.Sequential(
