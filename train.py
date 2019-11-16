@@ -43,7 +43,8 @@ def baseline_train(args, sigVerNet, dataloader, eval_dataloader):
     loss_history = []
     iteration_number = 0
 
-    optimizer = optim.RMSprop(sigVerNet.parameters(), lr=1e-4, alpha=0.99, eps=1e-8, weight_decay=0.0005, momentum=0.9)
+    # optimizer = optim.RMSprop(sigVerNet.parameters(), lr=args.lr, alpha=0.99, eps=1e-8, weight_decay=0.0005, momentum=0.9)
+    optimizer = optim.SGD(sigVerNet.parameters(), lr=args.lr)
     criterion = ContrastLoss()
 
     for epoch in range(0, args.epochs):
@@ -68,6 +69,34 @@ def baseline_train(args, sigVerNet, dataloader, eval_dataloader):
 
     return sigVerNet
 
+def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
+    counter = []
+    loss_history = []
+    iteration_number = 0
+
+    criterion = torch.nn.MarginRankingLoss(margin=2)
+    optimizer = optim.SGD(sigVerNet.parameters(), lr=args.lr)
+
+
+    for epoch in range(0, args.epochs):
+        for i, data in enumerate(dataloader, 0):
+            anchor, pos, neg = data
+            optimizer.zero_grad()
+            output1, output2, output3 = sigVerNet(anchor, pos, neg)
+            loss_triplet = criterion(output1, output2, output3)
+            loss_triplet.backward()
+            optimizer.step()
+            #if i % 50 == 0:
+            print("Epoch number {} batch number {}\n Current loss {}".format(epoch+1, i+1, loss_triplet.item()))
+            #if i % 10 == 0:
+                #train_acc = eval_baseline(args, sigVerNet, eval_dataloader)
+                #print(" training accuracy {}\n".format(train_acc))
+
+            #iteration_number += 10
+            #counter.append(iteration_number)
+            #loss_history.append(loss_contrastive.item())
+
+    return sigVerNet
 
 def eval_baseline(args, model, dataloader):
     tot_num = 0
@@ -79,12 +108,13 @@ def eval_baseline(args, model, dataloader):
             output1, output2 = model(img0, img1)
             euclidean_distance = F.pairwise_distance(output1, output2)
             predictions = []
+            print("distance: ", euclidean_distance)
             for j in range(output1.shape[0]):
                 if euclidean_distance[j] > args.baseline_margin:
                     predictions.append(1)
                 else:
                     predictions.append(0)
-
+            print("predictions: ", predictions)
             for j in range(len(predictions)):
                 if predictions[j] == label[j]:
                     tot_num += 1
@@ -100,7 +130,7 @@ def main():
     parser.add_argument('--batch_size', type=int, default=5)
     parser.add_argument('--valid_size', type=int, default=4)
     parser.add_argument('--split_coefficient', type=int, default=0.2)
-    parser.add_argument('--lr', type=float, default = 0.01)
+    parser.add_argument('--lr', type=float, default = 0.0001)
     parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--loss_type', choices=['mse', 'ce'], default='ce')
     parser.add_argument('--hidden_size', type=int, default=32)
@@ -108,11 +138,14 @@ def main():
     parser.add_argument('--if_batch', type=bool, default=False)
     parser.add_argument('--num_kernel', type=int, default=30)
     parser.add_argument('--model_type', choices=['small', 'test', 'best', 'best_small'], default='test')
-    parser.add_argument('--baseline_margin', type=float, default=1)
+    parser.add_argument('--baseline_margin', type=float, default=0.007)
     args = parser.parse_args()
 
     num_of_names = 55
     data_base_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
+
+    tri_train_csv = '20_train_triplet_list.csv'
+    tri_train_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
 
 
     train_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
@@ -139,13 +172,23 @@ def main():
     # Load the the dataset from raw image folders
     siamese_dataset = SiameseNetworkDataset(csv=train_csv, dir=train_dir,
                                             transform=sig_transformations)
+    triplet_dataset = TripletDataset(csv=tri_train_csv, dir=tri_train_dir,
+                                            transform=sig_transformations)
     train_dataloader = DataLoader(siamese_dataset,
+                            shuffle=True,
+                            batch_size=args.batch_size)
+
+    tri_train_dataloader = DataLoader(triplet_dataset,
                             shuffle=True,
                             batch_size=args.batch_size)
 
     eval_dataset = SiameseNetworkDataset(csv=eval_csv, dir=train_dir,
                                          transform=sig_transformations)
-    eval_dataloader = DataLoader(eval_dataset, shuffle=True, batch_size=102)
+
+    eval_dataloader = DataLoader(eval_dataset, shuffle=True)
+
+    tri_eval_dataloader = DataLoader(triplet_dataset,
+                            shuffle=True)
 
     valid_dataset = SiameseNetworkDataset(csv=valid_csv, dir=valid_dir,
                                             transform=sig_transformations)
@@ -170,7 +213,9 @@ def main():
 
 
     sigVerNet = SiameseNetwork()
-    net_after = baseline_train(args, sigVerNet, train_dataloader, eval_dataloader)
+    tripletNet = TripletNetwork()
+    #net_after = baseline_train(args, sigVerNet, train_dataloader, eval_dataloader)
+    trp_after = triplet_train(args, tripletNet, tri_train_dataloader, tri_eval_dataloader)
 
 
 
