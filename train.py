@@ -149,7 +149,7 @@ def main():
 
 
     train_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
-    #train_dir = "D:/1_Study/EngSci_Year3/ECE324_SigVer_project"
+    train_dir = "D:/1_Study/EngSci_Year3/ECE324_SigVer_project"
     train_csv = "train_paried_list.csv"
     train_csv = "20_overfit_list.csv"
     eval_csv = "20_overfit_list.csv"
@@ -189,6 +189,8 @@ def main():
 
     tri_eval_dataloader = DataLoader(triplet_dataset,
                             shuffle=True)
+
+
 
     valid_dataset = SiameseNetworkDataset(csv=valid_csv, dir=valid_dir,
                                             transform=sig_transformations)
