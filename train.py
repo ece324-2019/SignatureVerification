@@ -38,36 +38,24 @@ from models import *
 '''
 
 
-def baseline_train(args, sigVerNet, dataloader, eval_dataloader):
-    counter = []
-    loss_history = []
-    iteration_number = 0
+def plot_loss_acc(n, loss_train, m, acc_train):
+    n_array = np.arange(n) + 1
+    plt.subplot(2, 1, 1)
+    line1 = plt.plot(n_array, loss_train, label='training loss')
+    plt.legend(loc='upper right')
+    plt.xlabel('number of mini-batches')
+    plt.ylabel('training loss')
+    plt.title('loss of training dataset')
 
-    # optimizer = optim.RMSprop(sigVerNet.parameters(), lr=args.lr, alpha=0.99, eps=1e-8, weight_decay=0.0005, momentum=0.9)
-    optimizer = optim.SGD(sigVerNet.parameters(), lr=args.lr)
-    criterion = ContrastLoss()
+    m_array = np.arange(m) + 1
+    plt.subplot(2, 1, 2)
+    line3 = plt.plot(m_array, acc_train, label='training accuracy')
+    plt.legend(loc='lower right')
+    plt.xlabel('number of epochs')
+    plt.ylabel('training accuracy')
+    plt.title('prediction accuracy of training dataset')
 
-    for epoch in range(0, args.epochs):
-        for i, data in enumerate(dataloader, 0):
-            img0, img1, label = data
-            #img0, img1, label = img0.cuda(), img1.cuda(), label.cuda()
-            img0, img1, label = img0, img1, label
-            optimizer.zero_grad()
-            output1, output2 = sigVerNet(img0, img1)
-            loss_contrastive = criterion(output1, output2, label)
-            loss_contrastive.backward()
-            optimizer.step()
-            #if i % 50 == 0:
-            print("Epoch number {} batch number {}\n Current loss {}".format(epoch+1, i+1, loss_contrastive.item()))
-            if i % 10 == 0:
-                train_acc = eval_baseline(args, sigVerNet, eval_dataloader)
-                print(" training accuracy {}\n".format(train_acc))
-
-            iteration_number += 10
-            counter.append(iteration_number)
-            loss_history.append(loss_contrastive.item())
-
-    return sigVerNet
+    plt.show()
 
 
 def eval_baseline(args, model, dataloader):
@@ -96,6 +84,41 @@ def eval_baseline(args, model, dataloader):
     return float(corr_num)/tot_num
 
 
+def baseline_train(args, sigVerNet, dataloader, eval_dataloader):
+    counter = []
+    loss_history = []
+    iteration_number = 0
+
+    # optimizer = optim.RMSprop(sigVerNet.parameters(), lr=args.lr, alpha=0.99, eps=1e-8, weight_decay=0.0005, momentum=0.9)
+    optimizer = optim.SGD(sigVerNet.parameters(), lr=args.lr)
+    criterion = ContrastLoss()
+
+    train_loss_list = []
+    train_acc_list = []
+    for epoch in range(0, args.epochs):
+        for i, data in enumerate(dataloader, 0):
+            img0, img1, label = data
+            #img0, img1, label = img0.cuda(), img1.cuda(), label.cuda()
+            img0, img1, label = img0, img1, label
+            optimizer.zero_grad()
+            output1, output2 = sigVerNet(img0, img1)
+            loss_contrastive = criterion(output1, output2, label)
+            loss_contrastive.backward()
+            optimizer.step()
+            #if i % 50 == 0:
+            print("Epoch number {} batch number {}\n Current loss {}".format(epoch+1, i+1, loss_contrastive.item()))
+            train_loss_list += [loss_contrastive.item()]
+            iteration_number += 10
+            counter.append(iteration_number)
+            loss_history.append(loss_contrastive.item())
+        train_acc = eval_baseline(args, sigVerNet, eval_dataloader)
+        print(" training accuracy {}\n".format(train_acc))
+        train_acc_list += [train_acc]
+    plot_loss_acc(len(train_loss_list), train_loss_list, len(train_acc_list), train_acc_list)
+
+    return sigVerNet
+
+
 def main():
 
     parser = argparse.ArgumentParser()
@@ -103,14 +126,14 @@ def main():
     parser.add_argument('--valid_size', type=int, default=4)
     parser.add_argument('--split_coefficient', type=int, default=0.2)
     parser.add_argument('--lr', type=float, default=0.001)
-    parser.add_argument('--epochs', type=int, default=100)
+    parser.add_argument('--epochs', type=int, default=50)
     parser.add_argument('--loss_type', choices=['mse', 'ce'], default='ce')
     parser.add_argument('--hidden_size', type=int, default=32)
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--if_batch', type=bool, default=False)
     parser.add_argument('--num_kernel', type=int, default=30)
     parser.add_argument('--model_type', choices=['small', 'test', 'best', 'best_small'], default='test')
-    parser.add_argument('--baseline_margin', type=float, default=0.007)
+    parser.add_argument('--baseline_margin', type=float, default=0.12)
     args = parser.parse_args()
 
     num_of_names = 55
@@ -172,7 +195,8 @@ def main():
 
 
     sigVerNet = SiameseNetwork()
-    net_after = baseline_train(args, sigVerNet, train_dataloader, eval_dataloader)
+    vggNet = VGG_SiameseNet()
+    net_after = baseline_train(args, vggNet, train_dataloader, eval_dataloader)
 
 
 
