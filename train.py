@@ -38,7 +38,7 @@ from models import *
 '''
 
 
-<<<<<<< HEAD
+
 def baseline_train(args, sigVerNet, dataloader, eval_dataloader):
     counter = []
     loss_history = []
@@ -218,14 +218,17 @@ def main():
     args = parser.parse_args()
 
     num_of_names = 55
-    data_base_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
+    #data_base_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
 
     tri_train_csv = '20_train_triplet_list.csv'
-    tri_train_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
+    #tri_train_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
+    tri_train_dir = '/content'
 
 
-    train_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
+    #train_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
     #train_dir = "D:/1_Study/EngSci_Year3/ECE324_SigVer_project"
+    train_dir = '/content'
+    
     train_csv = "train_paried_list.csv"
     train_csv = "20_overfit_list.csv"
     eval_csv = "20_overfit_list.csv"
@@ -286,17 +289,17 @@ def main():
 
     example_batch = next(dataiter)
     concatenated = torch.cat((example_batch[0], example_batch[1]), 0)
-    #imshow(torchvision.utils.make_grid(concatenated))
+    imshow(torchvision.utils.make_grid(concatenated))
     print(example_batch[2].numpy())
 
 
     sigVerNet = SiameseNetwork()
     vggNet = VGG_SiameseNet()
-    net_after = baseline_train(args, vggNet, train_dataloader, eval_dataloader)
+    #net_after = baseline_train(args, vggNet, train_dataloader, eval_dataloader)
 
     tripletNet = TripletNetwork()
-    net_after = baseline_train(args, sigVerNet, train_dataloader, eval_dataloader)
-    #trp_after = triplet_train(args, tripletNet, tri_train_dataloader, tri_eval_dataloader)
+    #net_after = baseline_train(args, sigVerNet, train_dataloader, eval_dataloader)
+    trp_after = triplet_train(args, tripletNet, tri_train_dataloader, tri_eval_dataloader)
 
 
 if __name__ == "__main__":
