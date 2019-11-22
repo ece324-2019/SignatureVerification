@@ -37,8 +37,8 @@ test_auth_path = base_dir + 'splitted_test_auth.txt'
 test_forg_path = base_dir + 'splitted_test_forg.txt'
 
 train_paired_path = 'train_paried_list.csv'
-valid_paried_path = 'valid_paried_list.csv'
-test_paried_path = 'test_paried_list.csv'
+valid_paried_path = 'valid_triplet_list.csv'
+test_paried_path = 'test_triplet_list.csv'
 
 total_name = 215
 
@@ -83,77 +83,77 @@ please only run the following code once
 START GENERATING NAME LISIS
 '''
 
-with open(train_auth_path, 'r') as t_auth_path:
-    for cnt, line in enumerate(t_auth_path):
-        line = line.rstrip()
-        #signatures/train/name_55_auth/original_55_5.png
-        name = re.match(
-            r'split_signature/.*name_(.*?)_auth.*.png', line)
-        print("index", int(name.group(1))-1)
-        with open(auth_names[int(name.group(1))-1], 'a') as temp:
-            temp.write(line + '\n')
-            print(auth_names[int(name.group(1))-1])
-            print(line)
-
-with open(train_forg_path, 'r') as t_forg_path:
-    for cnt, line in enumerate(t_forg_path):
-        line = line.rstrip()
-        #signatures/train/name_55_forg/forgeries_55_9.png
-        name = re.match(
-            r'split_signature/.*name_(.*?)_forg.*.png', line)
-        print("index", int(name.group(1))-1)
-        with open(forg_names[int(name.group(1))-1], 'a') as temp:
-            temp.write(line + '\n')
-            print(forg_names[int(name.group(1))-1])
-            print(line)
-
-with open(valid_auth_path, 'r') as v_auth_path:
-    for cnt, line in enumerate(v_auth_path):
-        line = line.rstrip()
-        #signatures/train/name_55_auth/original_55_5.png
-        name = re.match(
-            r'split_signature/.*name_(.*?)_auth.*.png', line)
-        print("index", int(name.group(1))-1)
-        with open(auth_names[int(name.group(1))-1], 'a') as temp:
-            temp.write(line + '\n')
-            print(auth_names[int(name.group(1))-1])
-            print(line)
-
-with open(valid_forg_path, 'r') as v_forg_path:
-    for cnt, line in enumerate(v_forg_path):
-        line = line.rstrip()
-        #signatures/train/name_55_forg/forgeries_55_9.png
-        name = re.match(
-            r'split_signature/.*name_(.*?)_forg.*.png', line)
-        print("index", int(name.group(1))-1)
-        with open(forg_names[int(name.group(1))-1], 'a') as temp:
-            temp.write(line + '\n')
-            print(forg_names[int(name.group(1))-1])
-            print(line)
-
-with open(test_auth_path, 'r') as t_auth_path:
-    for cnt, line in enumerate(t_auth_path):
-        line = line.rstrip()
-        #signatures/train/name_55_auth/original_55_5.png
-        name = re.match(
-            r'split_signature/.*name_(.*?)_auth.*.png', line)
-        print("index", int(name.group(1))-1)
-        with open(auth_names[int(name.group(1))-1], 'a') as temp:
-            temp.write(line + '\n')
-            print(auth_names[int(name.group(1))-1])
-            print(line)
-
-with open(test_forg_path, 'r') as t_forg_path:
-    for cnt, line in enumerate(t_forg_path):
-        line = line.rstrip()
-        #signatures/train/name_55_forg/forgeries_55_9.png
-        name = re.match(
-            r'split_signature/.*name_(.*?)_forg.*.png', line)
-        print("index", int(name.group(1))-1)
-        with open(forg_names[int(name.group(1))-1], 'a') as temp:
-            temp.write(line + '\n')
-            print(forg_names[int(name.group(1))-1])
-            print(line)
+# with open(train_auth_path, 'r') as t_auth_path:
+#     for cnt, line in enumerate(t_auth_path):
+#         line = line.rstrip()
+#         #signatures/train/name_55_auth/original_55_5.png
+#         name = re.match(
+#             r'split_signature/.*name_(.*?)_auth.*.png', line)
+#         print("index", int(name.group(1))-1)
+#         with open(auth_names[int(name.group(1))-1], 'a') as temp:
+#             temp.write(line + '\n')
+#             print(auth_names[int(name.group(1))-1])
+#             print(line)
+#
+# with open(train_forg_path, 'r') as t_forg_path:
+#     for cnt, line in enumerate(t_forg_path):
+#         line = line.rstrip()
+#         #signatures/train/name_55_forg/forgeries_55_9.png
+#         name = re.match(
+#             r'split_signature/.*name_(.*?)_forg.*.png', line)
+#         print("index", int(name.group(1))-1)
+#         with open(forg_names[int(name.group(1))-1], 'a') as temp:
+#             temp.write(line + '\n')
+#             print(forg_names[int(name.group(1))-1])
+#             print(line)
+#
+# with open(valid_auth_path, 'r') as v_auth_path:
+#     for cnt, line in enumerate(v_auth_path):
+#         line = line.rstrip()
+#         #signatures/train/name_55_auth/original_55_5.png
+#         name = re.match(
+#             r'split_signature/.*name_(.*?)_auth.*.png', line)
+#         print("index", int(name.group(1))-1)
+#         with open(auth_names[int(name.group(1))-1], 'a') as temp:
+#             temp.write(line + '\n')
+#             print(auth_names[int(name.group(1))-1])
+#             print(line)
+#
+# with open(valid_forg_path, 'r') as v_forg_path:
+#     for cnt, line in enumerate(v_forg_path):
+#         line = line.rstrip()
+#         #signatures/train/name_55_forg/forgeries_55_9.png
+#         name = re.match(
+#             r'split_signature/.*name_(.*?)_forg.*.png', line)
+#         print("index", int(name.group(1))-1)
+#         with open(forg_names[int(name.group(1))-1], 'a') as temp:
+#             temp.write(line + '\n')
+#             print(forg_names[int(name.group(1))-1])
+#             print(line)
+#
+# with open(test_auth_path, 'r') as t_auth_path:
+#     for cnt, line in enumerate(t_auth_path):
+#         line = line.rstrip()
+#         #signatures/train/name_55_auth/original_55_5.png
+#         name = re.match(
+#             r'split_signature/.*name_(.*?)_auth.*.png', line)
+#         print("index", int(name.group(1))-1)
+#         with open(auth_names[int(name.group(1))-1], 'a') as temp:
+#             temp.write(line + '\n')
+#             print(auth_names[int(name.group(1))-1])
+#             print(line)
+#
+# with open(test_forg_path, 'r') as t_forg_path:
+#     for cnt, line in enumerate(t_forg_path):
+#         line = line.rstrip()
+#         #signatures/train/name_55_forg/forgeries_55_9.png
+#         name = re.match(
+#             r'split_signature/.*name_(.*?)_forg.*.png', line)
+#         print("index", int(name.group(1))-1)
+#         with open(forg_names[int(name.group(1))-1], 'a') as temp:
+#             temp.write(line + '\n')
+#             print(forg_names[int(name.group(1))-1])
+#             print(line)
 '''
     END OF GENERATING NAME LISTS
 '''
@@ -164,31 +164,28 @@ with open(test_forg_path, 'r') as t_forg_path:
 # auth_last = None
 with open(train_paired_path, 'a') as train_pair, open(valid_paried_path, 'a') as valid_pair, \
         open(test_paried_path, 'a') as test_pair:
-    for i in range(1, total_name + 1):
+    for i in range(1,  16):
         if (i <= 6):
             writing = valid_pair
-        elif (i <= 15):
-            writing = test_pair
         else:
-            writing = train_pair
+            writing = test_pair
+
 
         with open(forg_names[i - 1], 'r') as forg_lists, \
                 open(auth_names[i - 1], 'r') as auth_lists:
-
-            # write forgery pair (1)
-            for c1, auth_line in enumerate(auth_lists):
-                forg_lists.seek(0)
-                for c2, forg_line in enumerate(forg_lists):
-                    auth_line = auth_line.rstrip()
-                    forg_line = forg_line.rstrip()
-                    # print(auth_line + ',' + forg_line + ',' + '1')
-                    writing.write(auth_line + ',' + forg_line + ',' + '1' + '\n')
-
-            # write forgery pair (0)
-            auth_lists.seek(0)
             auth_lists_itr = [line.strip() for line in auth_lists]
             auth_lists_itr_2 = auth_lists_itr.copy()
+            auth_lists_itr_3 = auth_lists_itr.copy()
+
+            forg_lists_itr = [line.strip() for line in forg_lists]
+
+            # write forgery pair (1)
             for c1, auth_line in enumerate(auth_lists_itr):
                 for c2, auth_line_2 in enumerate(auth_lists_itr_2):
-                    # print(auth_line + ',' + auth_line_2 + ',' + '0')
-                    writing.write(auth_line + ',' + auth_line_2 + ',' + '0' + '\n')
+                    for c3, auth_line_3 in enumerate(auth_lists_itr_3):
+                        writing.write(auth_line + ',' + auth_line_2 + ',' + auth_line_3 + ',' + '0' + '\n')
+
+            for c1, auth_line in enumerate(auth_lists_itr):
+                for c2, auth_line_2 in enumerate(auth_lists_itr_2):
+                    for c3, forg_line in enumerate(forg_lists_itr):
+                        writing.write(auth_line + ',' + auth_line_2 + ',' + auth_line_3 + ',' + '1' + '\n')
