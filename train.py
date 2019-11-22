@@ -17,6 +17,7 @@ import torch.optim as optim
 import torch.nn as nn
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
+import torch.nn.functional as F
 
 import torchvision
 import torchvision.transforms as transforms
@@ -38,38 +39,6 @@ from models import *
 '''
 
 
-<<<<<<< HEAD
-def baseline_train(args, sigVerNet, dataloader, eval_dataloader):
-    counter = []
-    loss_history = []
-    iteration_number = 0
-
-    # optimizer = optim.RMSprop(sigVerNet.parameters(), lr=args.lr, alpha=0.99, eps=1e-8, weight_decay=0.0005, momentum=0.9)
-    optimizer = optim.SGD(sigVerNet.parameters(), lr=args.lr)
-    criterion = torch.nn.MarginRankingLoss(margin = 0.02)
-
-    for epoch in range(0, args.epochs):
-        for i, data in enumerate(dataloader, 0):
-            img0, img1, label = data
-            #img0, img1, label = img0.cuda(), img1.cuda(), label.cuda()
-            img0, img1, label = img0, img1, label
-            optimizer.zero_grad()
-            output1, output2 = sigVerNet(img0, img1)
-            loss_contrastive = criterion(output1, output2, label)
-            loss_contrastive.backward()
-            optimizer.step()
-            #if i % 50 == 0:
-            print("Epoch number {} batch number {}\n Current loss {}".format(epoch+1, i+1, loss_contrastive.item()))
-            if i % 10 == 0:
-                train_acc = eval_baseline(args, sigVerNet, eval_dataloader)
-                print(" training accuracy {}\n".format(train_acc))
-
-            iteration_number += 10
-            counter.append(iteration_number)
-            loss_history.append(loss_contrastive.item())
-
-    return sigVerNet
-
 def plot_loss_acc(n, loss_train, m, acc_train):
     n_array = np.arange(n) + 1
     plt.subplot(2, 1, 1)
@@ -89,34 +58,6 @@ def plot_loss_acc(n, loss_train, m, acc_train):
 
     plt.show()
 
-def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
-    counter = []
-    loss_history = []
-    iteration_number = 0
-
-    criterion = torch.nn.MarginRankingLoss(margin=0.015)
-    optimizer = optim.SGD(sigVerNet.parameters(), lr=args.lr)
-
-
-    for epoch in range(0, args.epochs):
-        for i, data in enumerate(dataloader, 0):
-            anchor, pos, neg = data
-            optimizer.zero_grad()
-            output1, output2, output3 = sigVerNet(anchor, pos, neg)
-            loss_triplet = criterion(output1, output2, output3)
-            loss_triplet.backward()
-            optimizer.step()
-            #if i % 50 == 0:
-            print("Epoch number {} batch number {}\n Current loss {}".format(epoch+1, i+1, loss_triplet.item()))
-            if i % 10 == 0:
-                train_acc = eval_triplet(args, sigVerNet, eval_dataloader)
-                print(" training accuracy {}\n".format(train_acc))
-
-            iteration_number += 10
-            counter.append(iteration_number)
-            loss_history.append(loss_triplet.item())
-
-    return sigVerNet
 
 def eval_baseline(args, model, dataloader):
     tot_num = 0
@@ -143,6 +84,7 @@ def eval_baseline(args, model, dataloader):
                     tot_num += 1
     return float(corr_num)/tot_num
 
+
 def eval_triplet(args, model, dataloader):
     tot_num = 0
     corr_num = 0
@@ -160,8 +102,9 @@ def eval_triplet(args, model, dataloader):
                     tot_num += 1
                 else:
                     tot_num += 1
-
+    print('corr_num: {} | tot_num: {}'.format(corr_num, tot_num))
     return float(corr_num)/tot_num
+
 
 def baseline_train(args, sigVerNet, dataloader, eval_dataloader):
     counter = []
@@ -184,13 +127,49 @@ def baseline_train(args, sigVerNet, dataloader, eval_dataloader):
             loss_contrastive = criterion(output1, output2, label)
             loss_contrastive.backward()
             optimizer.step()
-            #if i % 50 == 0:
+
             print("Epoch number {} batch number {}\n Current loss {}".format(epoch+1, i+1, loss_contrastive.item()))
             train_loss_list += [loss_contrastive.item()]
             iteration_number += 10
             counter.append(iteration_number)
             loss_history.append(loss_contrastive.item())
+
         train_acc = eval_baseline(args, sigVerNet, eval_dataloader)
+        print(" training accuracy {}\n".format(train_acc))
+        train_acc_list += [train_acc]
+    plot_loss_acc(len(train_loss_list), train_loss_list, len(train_acc_list), train_acc_list)
+
+    return sigVerNet
+
+
+def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
+    counter = []
+    loss_history = []
+    iteration_number = 0
+
+    criterion = torch.nn.TripletMarginLoss(margin=1.5)
+    # optimizer = optim.SGD(sigVerNet.parameters(), lr=args.lr)
+    # optimizer = optim.RMSprop(sigVerNet.parameters(), lr=args.lr, alpha=0.99, eps=1e-8, weight_decay=0.0005, momentum=0.9)
+    optimizer = torch.optim.Adam(sigVerNet.parameters(), lr=args.lr)
+
+    train_loss_list = []
+    train_acc_list = []
+    for epoch in range(0, args.epochs):
+        for i, data in enumerate(dataloader, 0):
+            anchor, pos, neg = data
+            optimizer.zero_grad()
+            output1, output2, output3 = sigVerNet(anchor, pos, neg)
+            loss_triplet = criterion(output1, output2, output3)
+            loss_triplet.backward()
+            optimizer.step()
+
+            print("Epoch number {} batch number {}\n Current loss {}".format(epoch+1, i+1, loss_triplet.item()))
+            train_loss_list += [loss_triplet.item()]
+            iteration_number += 10
+            counter.append(iteration_number)
+            loss_history.append(loss_triplet.item())
+
+        train_acc = eval_triplet(args, sigVerNet, eval_dataloader)
         print(" training accuracy {}\n".format(train_acc))
         train_acc_list += [train_acc]
     plot_loss_acc(len(train_loss_list), train_loss_list, len(train_acc_list), train_acc_list)
@@ -205,7 +184,7 @@ def main():
     parser.add_argument('--valid_size', type=int, default=4)
     parser.add_argument('--split_coefficient', type=int, default=0.2)
 
-    parser.add_argument('--lr', type=float, default=0.001)
+    parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--epochs', type=int, default=50)
     parser.add_argument('--loss_type', choices=['mse', 'ce'], default='ce')
     parser.add_argument('--hidden_size', type=int, default=32)
@@ -214,7 +193,7 @@ def main():
     parser.add_argument('--num_kernel', type=int, default=30)
     parser.add_argument('--model_type', choices=['small', 'test', 'best', 'best_small'], default='test')
     parser.add_argument('--baseline_margin', type=float, default=0.007)
-    parser.add_argument('--triplet_margin', type=float, default=0.007)
+    parser.add_argument('--triplet_margin', type=float, default=0.8)
     args = parser.parse_args()
 
     num_of_names = 55
@@ -222,10 +201,10 @@ def main():
 
     tri_train_csv = '20_train_triplet_list.csv'
     tri_train_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
-
+    tri_train_dir = "D:/1_Study/EngSci_Year3/ECE324_SigVer_project"
 
     train_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
-    #train_dir = "D:/1_Study/EngSci_Year3/ECE324_SigVer_project"
+    train_dir = "D:/1_Study/EngSci_Year3/ECE324_SigVer_project"
     train_csv = "train_paried_list.csv"
     train_csv = "20_overfit_list.csv"
     eval_csv = "20_overfit_list.csv"
@@ -266,8 +245,6 @@ def main():
     tri_eval_dataloader = DataLoader(triplet_dataset,
                             shuffle=True)
 
-
-
     valid_dataset = SiameseNetworkDataset(csv=valid_csv, dir=valid_dir,
                                             transform=sig_transformations)
     valid_dataloader = DataLoader(siamese_dataset,
@@ -289,14 +266,15 @@ def main():
     #imshow(torchvision.utils.make_grid(concatenated))
     print(example_batch[2].numpy())
 
-
     sigVerNet = SiameseNetwork()
     vggNet = VGG_SiameseNet()
-    net_after = baseline_train(args, vggNet, train_dataloader, eval_dataloader)
-
     tripletNet = TripletNetwork()
-    net_after = baseline_train(args, sigVerNet, train_dataloader, eval_dataloader)
-    #trp_after = triplet_train(args, tripletNet, tri_train_dataloader, tri_eval_dataloader)
+    vgg_tripletNet = VggTriplet()
+
+    # net_after = baseline_train(args, sigVerNet, train_dataloader, eval_dataloader)
+    # net_after = baseline_train(args, vggNet, train_dataloader, eval_dataloader)
+    # trp_after = triplet_train(args, tripletNet, tri_train_dataloader, tri_eval_dataloader)
+    trp_after = triplet_train(args, vgg_tripletNet, tri_train_dataloader, tri_eval_dataloader)
 
 
 if __name__ == "__main__":
