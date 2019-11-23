@@ -75,3 +75,41 @@ class TripletDataset():
 
     def __len__(self):
         return len(self.training_df)
+
+
+class Triplet_Eval_Dataset():
+
+
+    def __init__(self, csv=None, dir=None, transform=None):
+        # used to prepare the labels and images path
+        self.training_df = pd.read_csv(csv)
+        self.training_df.columns = ["anchor", "pos", "question", "label"]
+        self.training_dir = dir
+        self.transform = transform
+
+    def __getitem__(self, index):
+        # getting the image path
+        anchor_path = os.path.join(self.training_dir, self.training_df.iat[index, 0])
+        pos_path = os.path.join(self.training_dir, self.training_df.iat[index, 1])
+        question_path = os.path.join(self.training_dir, self.training_df.iat[index, 2])
+
+
+        # Loading the image
+        anchor = Image.open(anchor_path)
+        pos = Image.open(pos_path)
+        question = Image.open(question_path)
+
+        anchor = anchor.convert("L")
+        pos = pos.convert("L")
+        question = question.convert("L")
+
+        # Apply image transformations
+        if self.transform is not None:
+            anchor = self.transform(anchor)
+            pos = self.transform(pos)
+            question = self.transform(question)
+
+        return anchor, pos, question, torch.from_numpy(np.array([int(self.training_df.iat[index, 4])], dtype=np.float32))
+
+    def __len__(self):
+        return len(self.training_df)
