@@ -86,7 +86,7 @@ def eval_baseline(args, model, dataloader):
     return float(corr_num)/tot_num
 
 
-def eval_triplet(args, model, dataloader):
+def eval_triplet_valid(args, model, dataloader):
     tot_num = 0
     corr_num = 0
 
