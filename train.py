@@ -181,6 +181,10 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
 
 def main():
 
+    if torch.cuda.is_available():
+        torch.set_default_tensor_type(torch.cuda.FloatTensor)
+
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--batch_size', type=int, default=20)
     parser.add_argument('--valid_size', type=int, default=4)
@@ -318,6 +322,8 @@ def main():
 
     tripletNet = TripletNetwork()
     vgg_tripletNet = VggTriplet()
+    if torch.cuda.is_available():
+        vgg_tripletNet = vgg_tripletNet.cuda()
 
     # net_after = baseline_train(args, sigVerNet, train_dataloader, eval_dataloader)
     # net_after = baseline_train(args, vggNet, train_dataloader, eval_dataloader)
