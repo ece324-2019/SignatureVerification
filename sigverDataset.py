@@ -109,7 +109,7 @@ class Triplet_Eval_Dataset():
             pos = self.transform(pos)
             question = self.transform(question)
 
-        return anchor, pos, question, torch.from_numpy(np.array([int(self.training_df.iat[index, 4])], dtype=np.float32))
+        return anchor, pos, question, torch.from_numpy(np.array([int(self.training_df.iat[index, 3])], dtype=np.float32))
 
     def __len__(self):
         return len(self.training_df)

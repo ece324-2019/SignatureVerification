@@ -92,13 +92,14 @@ def eval_triplet(args, model, dataloader):
 
     with torch.no_grad():
         for i, data in enumerate(dataloader, 0):
-            anchor, pos, neg = data
-            output1, output2, output3 = model(anchor, pos, neg)
+            anchor, pos, question, label = data
+            output1, output2, output3 = model(anchor, pos, question)
             dist_pos = F.pairwise_distance(output1, output2)
             dist_neg = F.pairwise_distance(output1, output3)
             print("distance: ", dist_pos, dist_neg)
             for j in range(output1.shape[0]):
-                if dist_neg[j] - dist_pos[j] > args.triplet_margin:
+                if (dist_neg[j] - dist_pos[j] > args.triplet_margin and label[j] == 1) \
+                        or (dist_neg[j] - dist_pos[j] <= args.triplet_margin and label[j] == 0):
                     corr_num += 1
                     tot_num += 1
                 else:
@@ -244,11 +245,13 @@ def main():
     baseline_valied_csv = "20_overfit_list.csv"
     baseline_test_csv = "20_overfit_list.csv"
 
-    triplet_train_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_train_triplet_list.csv"
-    triplet_valid_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_valid_triplet_list.csv"
+    # triplet_train_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_train_triplet_list.csv"
+    # triplet_valid_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_valid_triplet_list.csv"
+    # triplet_test_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_test_triplet_list.csv"
+
+    triplet_train_csv = "20_train_triplet_list.csv"
+    triplet_valid_csv = "20_valid_triplet_list.csv"
     triplet_test_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_test_triplet_list.csv"
-
-
 
 
     #define transformer
@@ -319,7 +322,7 @@ def main():
     # net_after = baseline_train(args, sigVerNet, train_dataloader, eval_dataloader)
     # net_after = baseline_train(args, vggNet, train_dataloader, eval_dataloader)
     # trp_after = triplet_train(args, tripletNet, tri_train_dataloader, tri_eval_dataloader)
-    trp_after = triplet_train(args, vgg_tripletNet, triplet_train_dataloader, triplet_valid_dataset)
+    trp_after = triplet_train(args, vgg_tripletNet, triplet_train_dataloader, triplet_valid_dataloader)
 
 
 if __name__ == "__main__":
