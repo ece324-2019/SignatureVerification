@@ -182,6 +182,7 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
 def main():
 
     if torch.cuda.is_available():
+        print("Using cuda")
         torch.set_default_tensor_type(torch.cuda.FloatTensor)
 
 
