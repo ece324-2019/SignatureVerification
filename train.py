@@ -185,14 +185,16 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
             loss_triplet.backward()
             optimizer.step()
 
-            print("Epoch number {} batch number {}\n Current loss {}".format(epoch + 1, i + 1, loss_triplet.item()))
+            train_acc = train_corr_num/train_tot_num
+
+            print("Epoch number {} batch number {} running loss {} running acc {}".format(epoch + 1, i + 1, loss_triplet.item(), train_acc))
             train_loss_list += [loss_triplet.item()]
             iteration_number += 10
             counter.append(iteration_number)
             loss_history.append(loss_triplet.item())
 
         eval_acc, eval_loss = eval_triplet_valid(args, sigVerNet, eval_dataloader)
-        print(" training accuracy {}\n".format(eval_acc))
+        print("validation accuracy {}\n".format(eval_acc))
         if epoch % 5 == 0 and epoch != 0:
             torch.save(sigVerNet, 'D:/1_Study/EngSci_Year3/ECE324_SigVer_project/triplet_sigVerNet_ep{}.pt'.format(epoch+1))
         eval_acc_list += [eval_acc]
