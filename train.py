@@ -39,7 +39,6 @@ from models import *
 '''
 
 
-
 def plot_loss_acc(n, loss_train, m, acc_train):
     n_array = np.arange(n) + 1
     plt.subplot(2, 1, 1)
@@ -83,7 +82,7 @@ def eval_baseline(args, model, dataloader):
                     corr_num += 1
                 else:
                     tot_num += 1
-    return float(corr_num)/tot_num
+    return float(corr_num) / tot_num
 
 
 def eval_triplet(args, model, dataloader):
@@ -105,7 +104,7 @@ def eval_triplet(args, model, dataloader):
                 else:
                     tot_num += 1
     print('corr_num: {} | tot_num: {}'.format(corr_num, tot_num))
-    return float(corr_num)/tot_num
+    return float(corr_num) / tot_num
 
 
 def baseline_train(args, sigVerNet, dataloader, eval_dataloader):
@@ -115,14 +114,14 @@ def baseline_train(args, sigVerNet, dataloader, eval_dataloader):
 
     # optimizer = optim.RMSprop(sigVerNet.parameters(), lr=args.lr, alpha=0.99, eps=1e-8, weight_decay=0.0005, momentum=0.9)
     optimizer = optim.SGD(sigVerNet.parameters(), lr=args.lr)
-    criterion = ContrastLoss(margin = 1.5)
+    criterion = ContrastLoss(margin=1.5)
 
     train_loss_list = []
     train_acc_list = []
     for epoch in range(0, args.epochs):
         for i, data in enumerate(dataloader, 0):
             img0, img1, label = data
-            #img0, img1, label = img0.cuda(), img1.cuda(), label.cuda()
+            # img0, img1, label = img0.cuda(), img1.cuda(), label.cuda()
             img0, img1, label = img0, img1, label
             optimizer.zero_grad()
             output1, output2 = sigVerNet(img0, img1)
@@ -130,7 +129,7 @@ def baseline_train(args, sigVerNet, dataloader, eval_dataloader):
             loss_contrastive.backward()
             optimizer.step()
 
-            print("Epoch number {} batch number {}\n Current loss {}".format(epoch+1, i+1, loss_contrastive.item()))
+            print("Epoch number {} batch number {}\n Current loss {}".format(epoch + 1, i + 1, loss_contrastive.item()))
             train_loss_list += [loss_contrastive.item()]
             iteration_number += 10
             counter.append(iteration_number)
@@ -165,7 +164,7 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
             loss_triplet.backward()
             optimizer.step()
 
-            print("Epoch number {} batch number {}\n Current loss {}".format(epoch+1, i+1, loss_triplet.item()))
+            print("Epoch number {} batch number {}\n Current loss {}".format(epoch + 1, i + 1, loss_triplet.item()))
             train_loss_list += [loss_triplet.item()]
             iteration_number += 10
             counter.append(iteration_number)
@@ -173,6 +172,8 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
 
         train_acc = eval_triplet(args, sigVerNet, eval_dataloader)
         print(" training accuracy {}\n".format(train_acc))
+        if epoch % 5 == 0 and epoch != 0:
+            torch.save(sigVerNet, 'D:/1_Study/EngSci_Year3/ECE324_SigVer_project/triplet_sigVerNet_ep{}.pt'.format(epoch+1))
         train_acc_list += [train_acc]
     plot_loss_acc(len(train_loss_list), train_loss_list, len(train_acc_list), train_acc_list)
 
@@ -180,14 +181,13 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
 
 
 def main():
-
     parser = argparse.ArgumentParser()
     parser.add_argument('--batch_size', type=int, default=20)
     parser.add_argument('--valid_size', type=int, default=4)
     parser.add_argument('--split_coefficient', type=int, default=0.2)
 
-    parser.add_argument('--lr', type=float, default=0.001)
-    parser.add_argument('--epochs', type=int, default=5)
+    parser.add_argument('--lr', type=float, default=0.0001)
+    parser.add_argument('--epochs', type=int, default=50)
 
     parser.add_argument('--loss_type', choices=['mse', 'ce'], default='ce')
     parser.add_argument('--hidden_size', type=int, default=32)
@@ -197,111 +197,119 @@ def main():
     parser.add_argument('--model_type', choices=['small', 'test', 'best', 'best_small'], default='test')
     parser.add_argument('--baseline_margin', type=float, default=0.75)
     parser.add_argument('--triplet_margin', type=float, default=0.75)
+    parser.add_argument('--computer', type=str, default='terry')
 
     args = parser.parse_args()
 
     num_of_names = 55
 
+    # tri_train_csv = '20_train_triplet_list.csv'
 
-    #tri_train_csv = '20_train_triplet_list.csv'
+    # tri_train_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
+    # tri_train_dir = '/content'
 
-    #tri_train_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
-    #tri_train_dir = '/content'
+    # train_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
+    # train_dir = "D:/1_Study/EngSci_Year3/ECE324_SigVer_project"
+    # train_dir = '/content'
 
+    # tri_train_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
+    # tri_train_dir = "D:/1_Study/EngSci_Year3/ECE324_SigVer_project"
 
-    #train_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
-    #train_dir = "D:/1_Study/EngSci_Year3/ECE324_SigVer_project"
-    #train_dir = '/content'
-    
+    # train_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
+    # train_dir = "D:/1_Study/EngSci_Year3/ECE324_SigVer_project"
 
-    #tri_train_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
-    #tri_train_dir = "D:/1_Study/EngSci_Year3/ECE324_SigVer_project"
+    # train_csv = "train_paried_list.csv"
+    # train_csv = "20_overfit_list.csv"
+    # eval_csv = "20_overfit_list.csv"
 
-    #train_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
-    #train_dir = "D:/1_Study/EngSci_Year3/ECE324_SigVer_project"
+    # valid_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
+    # valid_dir = "D:/1_Study/EngSci_Year3/ECE324_SigVer_project"
+    # valid_csv = "valid_paried_list.csv"
 
-    #train_csv = "train_paried_list.csv"
-    #train_csv = "20_overfit_list.csv"
-    #eval_csv = "20_overfit_list.csv"
+    # test_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
+    # test_dir = "D:/1_Study/EngSci_Year3/ECE324_SigVer_project"
+    # test_csv = "test_paried_list.csv"
 
-    #valid_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
-    #valid_dir = "D:/1_Study/EngSci_Year3/ECE324_SigVer_project"
-    #valid_csv = "valid_paried_list.csv"
+    if args.computer == 'terry':
+        # terry
+        data_base_dir = 'D:/1_Study/EngSci_Year3/ECE324_SigVer_project/'
 
-    #test_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
-    #test_dir = "D:/1_Study/EngSci_Year3/ECE324_SigVer_project"
-    #test_csv = "test_paried_list.csv"
+        baseline_train_csv = "20_overfit_list.csv"
+        baseline_valied_csv = "20_overfit_list.csv"
+        baseline_test_csv = "20_overfit_list.csv"
 
-    #terry
+        # triplet_train_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_train_triplet_list.csv"
+        # triplet_valid_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_valid_triplet_list.csv"
+        # triplet_test_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_test_triplet_list.csv"
 
-    #google
+        triplet_train_csv = "20_train_triplet_list.csv"
+        triplet_valid_csv = "20_valid_triplet_list.csv"
+        # triplet_test_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_test_triplet_list.csv"
 
+    elif args.computer == 'google':
+        # google
+        pass
 
-    #yize
+    elif args.computer == 'yize':
+        # yize
+        data_base_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
 
-    data_base_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
+        baseline_train_csv = "20_overfit_list.csv"
+        baseline_valied_csv = "20_overfit_list.csv"
+        baseline_test_csv = "20_overfit_list.csv"
 
-    baseline_train_csv = "20_overfit_list.csv"
-    baseline_valied_csv = "20_overfit_list.csv"
-    baseline_test_csv = "20_overfit_list.csv"
+        # triplet_train_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_train_triplet_list.csv"
+        # triplet_valid_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_valid_triplet_list.csv"
+        # triplet_test_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_test_triplet_list.csv"
 
-    # triplet_train_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_train_triplet_list.csv"
-    # triplet_valid_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_valid_triplet_list.csv"
-    # triplet_test_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_test_triplet_list.csv"
+        triplet_train_csv = "20_train_triplet_list.csv"
+        triplet_valid_csv = "20_valid_triplet_list.csv"
+        triplet_test_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_test_triplet_list.csv"
 
-    triplet_train_csv = "20_train_triplet_list.csv"
-    triplet_valid_csv = "20_valid_triplet_list.csv"
-    triplet_test_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_test_triplet_list.csv"
-
-
-    #define transformer
+    # define transformer
     sig_transformations = transforms.Compose([
-        transforms.Resize((200, 200)),
+        transforms.Resize((105, 105)),
         transforms.ToTensor()
 
     ])
 
-    #data pipeline for siamese
+    # data pipeline for siamese
     siamese_dataset = SiameseNetworkDataset(csv=baseline_train_csv, dir=data_base_dir,
                                             transform=sig_transformations)
     baseline_train_dataloader = DataLoader(siamese_dataset,
-                            shuffle=True,
-                            batch_size=args.batch_size)
-
+                                           shuffle=True,
+                                           batch_size=args.batch_size)
 
     valid_dataset = SiameseNetworkDataset(csv=baseline_valied_csv, dir=data_base_dir,
-                                            transform=sig_transformations)
+                                          transform=sig_transformations)
     valid_dataloader = DataLoader(siamese_dataset,
-                            shuffle=True,
-                            batch_size=args.batch_size)
+                                  shuffle=True,
+                                  batch_size=args.batch_size)
+
     test_dataset = SiameseNetworkDataset(csv=baseline_test_csv, dir=data_base_dir,
-                                            transform=sig_transformations)
+                                         transform=sig_transformations)
     test_dataloader = DataLoader(siamese_dataset,
-                            shuffle=True,
-                            batch_size=args.batch_size)
+                                 shuffle=True,
+                                 batch_size=args.batch_size)
 
-
-
-    #data pipeline for triplet
+    # data pipeline for triplet
     triplet_dataset = TripletDataset(csv=triplet_train_csv, dir=data_base_dir,
-                                            transform=sig_transformations)
+                                     transform=sig_transformations)
     triplet_train_dataloader = DataLoader(triplet_dataset,
                                           shuffle=True,
                                           batch_size=args.batch_size)
 
-    triplet_valid_dataset = Triplet_Eval_Dataset(csv = triplet_valid_csv, dir = data_base_dir,
-                                                 transform = sig_transformations)
+    triplet_valid_dataset = Triplet_Eval_Dataset(csv=triplet_valid_csv, dir=data_base_dir,
+                                                 transform=sig_transformations)
     triplet_valid_dataloader = DataLoader(triplet_valid_dataset,
                                           shuffle=True,
                                           batch_size=args.batch_size)
 
-    triplet_test_dataset = Triplet_Eval_Dataset(csv = triplet_test_csv, dir = data_base_dir,
-                                                 transform = sig_transformations)
-    triplet_test_dataloader = DataLoader(triplet_test_dataset,
-                                          shuffle=True,
-                                          batch_size=args.batch_size)
-
-
+    # triplet_test_dataset = Triplet_Eval_Dataset(csv = triplet_test_csv, dir = data_base_dir,
+    #                                              transform = sig_transformations)
+    # triplet_test_dataloader = DataLoader(triplet_test_dataset,
+    #                                       shuffle=True,
+    #                                       batch_size=args.batch_size)
 
     vis_dataloader = DataLoader(triplet_dataset,
                                 shuffle=True,
@@ -311,7 +319,7 @@ def main():
     example_batch = next(dataiter)
     concatenated = torch.cat((example_batch[0], example_batch[1], example_batch[2]), 0)
     imshow(torchvision.utils.make_grid(concatenated))
-    #print(example_batch[3].numpy())
+    # print(example_batch[3].numpy())
 
     sigVerNet = SiameseNetwork()
     vggNet = VGG_SiameseNet()
