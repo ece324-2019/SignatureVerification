@@ -91,23 +91,34 @@ def eval_triplet_valid(args, model, dataloader):
     tot_num = 0
     corr_num = 0
     loss_accum = 0
-    criterion = torch.nn.TripletMarginLoss(margin=1.5)
+    criterion = torch.nn.TripletMarginLoss(margin=args.triplet_margin)
     with torch.no_grad():
         for i, data in enumerate(dataloader, 0):
             anchor, pos, question, label = data
             anchor, pos, question, label = anchor.cuda(), pos.cuda(), question.cuda(), label.cuda()
             output1, output2, output3 = model(anchor, pos, question)
             loss_triplet = criterion(output1, output2, output3)
-            dist_pos = F.pairwise_distance(output1, output2)
-            dist_neg = F.pairwise_distance(output1, output3)
+            
+            dist = torch.nn.PairwiseDistance(p=2)
+            dist_pos = dist(output1, output2)
+            dist_neg = dist(output1, output3)
             print("distance: ", dist_pos, dist_neg)
             for j in range(output1.shape[0]):
-                if (dist_neg[j] - dist_pos[j] > 1 and label[j] == 1) \
-                        or (dist_neg[j] - dist_pos[j] <= 1 and label[j] == 0):
+                if (dist_neg[j] - dist_pos[j] > args.triplet_eval_margin and label[j] == 1):
+                    print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "forgeries", "correct 1")
+                    corr_num += 1
+                    tot_num += 1
+                elif (dist_neg[j] - dist_pos[j] <= args.triplet_eval_margin and label[j] == 0):
+                    print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "authentic", "correct 0")
                     corr_num += 1
                     tot_num += 1
                 else:
                     tot_num += 1
+                    if (label[j] == 1): 
+                        print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "authentic", "incorrect 1")
+                    else: 
+                        print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "forgeries", "incorrect 0")
+                    
         loss_accum += loss_triplet
     print('corr_num: {} | tot_num: {}'.format(corr_num, tot_num))
     return float(corr_num) / tot_num, loss_accum / tot_num
@@ -153,7 +164,7 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
     batch_train_acc_list = []
     iteration_number = 0
 
-    criterion = torch.nn.TripletMarginLoss(margin=1.5)
+    criterion = torch.nn.TripletMarginLoss(margin=args.triplet_margin, p=2)
     # optimizer = optim.SGD(sigVerNet.parameters(), lr=args.lr)
     # optimizer = optim.RMSprop(sigVerNet.parameters(), lr=args.lr, alpha=0.99, eps=1e-8, weight_decay=0.0005, momentum=0.9)
     optimizer = torch.optim.Adam(sigVerNet.parameters(), lr=args.lr)
@@ -181,16 +192,20 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
             optimizer.zero_grad()
             output1, output2, output3 = sigVerNet(anchor, pos, neg)
 
-            dist_pos = F.pairwise_distance(output1, output2)
-            dist_neg = F.pairwise_distance(output1, output3)
+            dist = torch.nn.PairwiseDistance(p=2)
 
-            print("pos_dist and neg_dist: ", dist_pos, dist_neg)
+            dist_pos = dist(output1, output2)
+            dist_neg = dist(output1, output3)
+
+            #print("pos_dist and neg_dist: ", dist_pos, dist_neg)
 
             for j in range(output1.shape[0]):
                 if (dist_neg[j] - dist_pos[j] > args.triplet_margin):
+                    print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "forgeries")
                     train_corr_num += 1
                     train_tot_num += 1
                 else:
+                    print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "authentic")
                     train_tot_num += 1
 
 
@@ -202,7 +217,7 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
             train_loss = loss_triplet.item()/data[0].shape[0]
 
 
-            if i % 200 == 0 and i != 0:
+            if i % 100 == 0 and i != 0:
                 eval_acc, eval_loss = eval_triplet_valid(args, sigVerNet, eval_dataloader)
                 valid_acc_list += [eval_acc]
                 valid_loss_list += [eval_loss]
@@ -244,7 +259,9 @@ def main():
     parser.add_argument('--model_type', choices=['small', 'test', 'best', 'best_small'], default='test')
     parser.add_argument('--baseline_margin', type=float, default=0.75)
     parser.add_argument('--triplet_margin', type=float, default=2)
+    parser.add_argument('--triplet_eval_margin', type=float, default=1)
     parser.add_argument('--computer', type=str, default='google')
+
 
     args = parser.parse_args()
 
@@ -306,8 +323,8 @@ def main():
         # triplet_test_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_test_triplet_list.csv"
 
         triplet_train_csv = "/content/50k_train_triplet_list.csv"
-        triplet_valid_csv = "/content/50k_valid_triplet_list.csv"
-        triplet_test_csv = "/content/50k_valid_triplet_list.csv"
+        triplet_valid_csv = "/content/200_valid_triplet_list.csv"
+        triplet_test_csv = "/content/200_valid_triplet_list.csv"
 
     elif args.computer == 'yize':
         # yize
@@ -327,7 +344,7 @@ def main():
 
     # define transformer
     sig_transformations = transforms.Compose([
-        transforms.Resize((120, 200)),
+        transforms.Resize((200, 300)),
         transforms.ToTensor()
 
     ])
