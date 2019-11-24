@@ -39,7 +39,7 @@ from models import *
 '''
 
 
-def plot_loss_acc(n, train_loss, valid_loss, m, train_acc, valid_acc):
+def plot_loss_acc(n, train_loss, valid_loss, m, train_acc, valid_acc, step):
     n_array = np.arange(n) + 1
     plt.subplot(2, 1, 1)
     line1 = plt.plot(n_array, valid_loss, label='validation loss')
@@ -58,7 +58,9 @@ def plot_loss_acc(n, train_loss, valid_loss, m, train_acc, valid_acc):
     plt.ylabel('training accuracy')
     plt.title('prediction accuracy of training dataset')
 
-    plt.show()
+    plt.savefig('/content/plots/triplet_sigVerNet_step{}.png'.format(step+1))
+    #plt.show()
+
 
 
 def eval_baseline(args, model, dataloader):
@@ -223,8 +225,10 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
                 valid_loss_list += [eval_loss]
                 train_acc_list += [train_acc]
                 train_loss_list += [train_loss]
-        
+                plot_loss_acc(len(valid_loss_list), train_loss_list, valid_loss_list, len(valid_acc_list),
+                              train_acc_list, valid_acc_list, i)
             print("Epoch number {} batch number {} running loss {} running acc {}".format(epoch + 1, i + 1, loss_triplet.item(), train_acc))
+
 
 
         print("validation accuracy {}\n".format(eval_acc))
@@ -232,7 +236,7 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
 
 
 
-    plot_loss_acc(len(valid_loss_list), train_loss_list, valid_loss_list, len(valid_acc_list), train_acc_list, valid_acc_list)
+
 
     return sigVerNet
 

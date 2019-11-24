@@ -37,8 +37,8 @@ test_auth_path = base_dir + 'splitted_test_auth.txt'
 test_forg_path = base_dir + 'splitted_test_forg.txt'
 
 train_paired_path = 'train_paried_list.csv'
-valid_paried_path = 'valid_triplet_list.csv'
-test_paried_path = 'test_triplet_list.csv'
+valid_paried_path = '/Users/yizezhao/PycharmProjects/ece324/sigver/valid_triplet_list.csv'
+test_paried_path = '/Users/yizezhao/PycharmProjects/ece324/sigver/test_triplet_list.csv'
 
 total_name = 215
 
@@ -188,4 +188,4 @@ with open(train_paired_path, 'a') as train_pair, open(valid_paried_path, 'a') as
             for c1, auth_line in enumerate(auth_lists_itr):
                 for c2, auth_line_2 in enumerate(auth_lists_itr_2):
                     for c3, forg_line in enumerate(forg_lists_itr):
-                        writing.write(auth_line + ',' + auth_line_2 + ',' + auth_line_3 + ',' + '1' + '\n')
+                        writing.write(auth_line + ',' + auth_line_2 + ',' + forg_line + ',' + '1' + '\n')
