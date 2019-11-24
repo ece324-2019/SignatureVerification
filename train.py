@@ -59,6 +59,7 @@ def plot_loss_acc(n, train_loss, valid_loss, m, train_acc, valid_acc, step):
     plt.title('prediction accuracy of training dataset')
 
     plt.savefig('/content/plots/triplet_sigVerNet_step{}.png'.format(step+1))
+    plt.close("all")
     #plt.show()
 
 
@@ -227,15 +228,14 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
                 train_loss_list += [train_loss]
                 plot_loss_acc(len(valid_loss_list), train_loss_list, valid_loss_list, len(valid_acc_list),
                               train_acc_list, valid_acc_list, i)
+                if (eval_acc >= 0.7): 
+                    torch.save(sigVerNet, '/content/models/triplet_sigVerNet_ep{}_step{}.pt'.format(epoch+1, i+1))
             print("Epoch number {} batch number {} running loss {} running acc {}".format(epoch + 1, i + 1, loss_triplet.item(), train_acc))
 
 
 
-        print("validation accuracy {}\n".format(eval_acc))
-        torch.save(sigVerNet, '/content/models/triplet_sigVerNet_ep{}.pt'.format(epoch+1))
-
-
-
+        #print("validation accuracy {}\n".format(eval_acc))
+        #torch.save(sigVerNet, '/content/models/triplet_sigVerNet_ep{}.pt'.format(epoch+1))
 
 
     return sigVerNet
@@ -247,7 +247,7 @@ def main():
         torch.set_default_tensor_type(torch.cuda.FloatTensor)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--batch_size', type=int, default=20)
+    parser.add_argument('--batch_size', type=int, default=30)
     parser.add_argument('--valid_size', type=int, default=4)
     parser.add_argument('--split_coefficient', type=int, default=0.2)
 
