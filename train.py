@@ -102,8 +102,8 @@ def eval_triplet_valid(args, model, dataloader):
             dist_neg = F.pairwise_distance(output1, output3)
             print("distance: ", dist_pos, dist_neg)
             for j in range(output1.shape[0]):
-                if (dist_neg[j] - dist_pos[j] > args.triplet_margin and label[j] == 1) \
-                        or (dist_neg[j] - dist_pos[j] <= args.triplet_margin and label[j] == 0):
+                if (dist_neg[j] - dist_pos[j] > 1 and label[j] == 1) \
+                        or (dist_neg[j] - dist_pos[j] <= 1 and label[j] == 0):
                     corr_num += 1
                     tot_num += 1
                 else:
@@ -150,8 +150,6 @@ def baseline_train(args, sigVerNet, dataloader, eval_dataloader):
 
 
 def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
-    counter = []
-    loss_history = []
     batch_train_acc_list = []
     iteration_number = 0
 
@@ -186,6 +184,8 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
             dist_pos = F.pairwise_distance(output1, output2)
             dist_neg = F.pairwise_distance(output1, output3)
 
+            print("pos_dist and neg_dist: ", dist_pos, dist_neg)
+
             for j in range(output1.shape[0]):
                 if (dist_neg[j] - dist_pos[j] > args.triplet_margin):
                     train_corr_num += 1
@@ -199,22 +199,24 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
             optimizer.step()
 
             train_acc = train_corr_num/train_tot_num
-            train_loss = loss_triplet.item()
+            train_loss = loss_triplet.item()/data[0].shape[0]
 
+
+            if i % 200 == 0 and i != 0:
+                eval_acc, eval_loss = eval_triplet_valid(args, sigVerNet, eval_dataloader)
+                valid_acc_list += [eval_acc]
+                valid_loss_list += [eval_loss]
+                train_acc_list += [train_acc]
+                train_loss_list += [train_loss]
+        
             print("Epoch number {} batch number {} running loss {} running acc {}".format(epoch + 1, i + 1, loss_triplet.item(), train_acc))
-            #train_loss_list += [loss_triplet.item()]
-            iteration_number += 10
-            counter.append(iteration_number)
-            loss_history.append(loss_triplet.item())
 
-        eval_acc, eval_loss = eval_triplet_valid(args, sigVerNet, eval_dataloader)
+
         print("validation accuracy {}\n".format(eval_acc))
         if epoch % 5 == 0 and epoch != 0:
-            torch.save(sigVerNet, 'D:/1_Study/EngSci_Year3/ECE324_SigVer_project/triplet_sigVerNet_ep{}.pt'.format(epoch+1))
-        valid_acc_list += [eval_acc]
-        valid_loss_list += [eval_loss]
-        train_acc_list += [train_acc]
-        train_loss_list += [train_loss]
+            torch.save(sigVerNet, '/content/models/triplet_sigVerNet_ep{}.pt'.format(epoch+1))
+
+
 
     plot_loss_acc(len(valid_loss_list), train_loss_list, valid_loss_list, len(valid_acc_list), train_acc_list, valid_acc_list)
 
@@ -241,8 +243,8 @@ def main():
     parser.add_argument('--num_kernel', type=int, default=30)
     parser.add_argument('--model_type', choices=['small', 'test', 'best', 'best_small'], default='test')
     parser.add_argument('--baseline_margin', type=float, default=0.75)
-    parser.add_argument('--triplet_margin', type=float, default=0.75)
-    parser.add_argument('--computer', type=str, default='yize')
+    parser.add_argument('--triplet_margin', type=float, default=2)
+    parser.add_argument('--computer', type=str, default='google')
 
     args = parser.parse_args()
 
@@ -293,7 +295,19 @@ def main():
 
     elif args.computer == 'google':
         # google
-        pass
+        data_base_dir = '/content/'
+
+        baseline_train_csv = "20_overfit_list.csv"
+        baseline_valied_csv = "20_overfit_list.csv"
+        baseline_test_csv = "20_overfit_list.csv"
+
+        # triplet_train_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_train_triplet_list.csv"
+        # triplet_valid_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_valid_triplet_list.csv"
+        # triplet_test_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_test_triplet_list.csv"
+
+        triplet_train_csv = "/content/50k_train_triplet_list.csv"
+        triplet_valid_csv = "/content/50k_valid_triplet_list.csv"
+        triplet_test_csv = "/content/50k_valid_triplet_list.csv"
 
     elif args.computer == 'yize':
         # yize
