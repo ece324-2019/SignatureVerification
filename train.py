@@ -155,11 +155,26 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
 
     train_loss_list = []
     train_acc_list = []
+
+    train_corr_num = 0
+    train_tot_num = 0
     for epoch in range(0, args.epochs):
         for i, data in enumerate(dataloader, 0):
             anchor, pos, neg = data
             optimizer.zero_grad()
             output1, output2, output3 = sigVerNet(anchor, pos, neg)
+
+            dist_pos = F.pairwise_distance(output1, output2)
+            dist_neg = F.pairwise_distance(output1, output3)
+
+            for j in range(output1.shape[0]):
+                if (dist_neg[j] - dist_pos[j] > args.triplet_margin):
+                    train_corr_num += 1
+                    train_tot_num += 1
+                else:
+                    train_tot_num += 1
+
+
             loss_triplet = criterion(output1, output2, output3)
             loss_triplet.backward()
             optimizer.step()
