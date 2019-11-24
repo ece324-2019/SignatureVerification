@@ -39,10 +39,11 @@ from models import *
 '''
 
 
-def plot_loss_acc(n, loss_train, m, acc_train):
+def plot_loss_acc(n, train_loss, valid_loss, m, train_acc, valid_acc):
     n_array = np.arange(n) + 1
     plt.subplot(2, 1, 1)
-    line1 = plt.plot(n_array, loss_train, label='training loss')
+    line1 = plt.plot(n_array, valid_loss, label='validation loss')
+    line2 = plt.plot(n_array, train_loss, label='training loss')
     plt.legend(loc='upper right')
     plt.xlabel('number of mini-batches')
     plt.ylabel('training loss')
@@ -50,7 +51,8 @@ def plot_loss_acc(n, loss_train, m, acc_train):
 
     m_array = np.arange(m) + 1
     plt.subplot(2, 1, 2)
-    line3 = plt.plot(m_array, acc_train, label='training accuracy')
+    line3 = plt.plot(m_array, valid_acc, label='validation accuracy')
+    line4 = plt.plot(m_array, train_acc, label='training accuracy')
     plt.legend(loc='lower right')
     plt.xlabel('number of epochs')
     plt.ylabel('training accuracy')
@@ -93,6 +95,7 @@ def eval_triplet_valid(args, model, dataloader):
     with torch.no_grad():
         for i, data in enumerate(dataloader, 0):
             anchor, pos, question, label = data
+            anchor, pos, question, label = anchor.cuda(), pos.cuda(), question.cuda(), label.cuda()
             output1, output2, output3 = model(anchor, pos, question)
             loss_triplet = criterion(output1, output2, output3)
             dist_pos = F.pairwise_distance(output1, output2)
@@ -149,6 +152,7 @@ def baseline_train(args, sigVerNet, dataloader, eval_dataloader):
 def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
     counter = []
     loss_history = []
+    batch_train_acc_list = []
     iteration_number = 0
 
     criterion = torch.nn.TripletMarginLoss(margin=1.5)
@@ -161,12 +165,21 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
 
     train_corr_num = 0
     train_tot_num = 0
-    eval_loss_list = []
-    eval_acc_list = []
+    valid_loss_list = []
+    valid_acc_list = []
+
+    train_acc = 0
+    train_loss = 0
+
 
     for epoch in range(0, args.epochs):
+
         for i, data in enumerate(dataloader, 0):
+            train_corr_num = 0
+            train_tot_num = 0
+
             anchor, pos, neg = data
+            anchor, pos, neg = anchor.cuda(), pos.cuda(), neg.cuda()
             optimizer.zero_grad()
             output1, output2, output3 = sigVerNet(anchor, pos, neg)
 
@@ -186,9 +199,10 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
             optimizer.step()
 
             train_acc = train_corr_num/train_tot_num
+            train_loss = loss_triplet.item()
 
             print("Epoch number {} batch number {} running loss {} running acc {}".format(epoch + 1, i + 1, loss_triplet.item(), train_acc))
-            train_loss_list += [loss_triplet.item()]
+            #train_loss_list += [loss_triplet.item()]
             iteration_number += 10
             counter.append(iteration_number)
             loss_history.append(loss_triplet.item())
@@ -197,9 +211,12 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
         print("validation accuracy {}\n".format(eval_acc))
         if epoch % 5 == 0 and epoch != 0:
             torch.save(sigVerNet, 'D:/1_Study/EngSci_Year3/ECE324_SigVer_project/triplet_sigVerNet_ep{}.pt'.format(epoch+1))
-        eval_acc_list += [eval_acc]
-        eval_loss_list += [eval_loss]
-    plot_loss_acc(len(eval_loss_list), eval_loss_list, len(eval_acc_list), eval_acc_list)
+        valid_acc_list += [eval_acc]
+        valid_loss_list += [eval_loss]
+        train_acc_list += [train_acc]
+        train_loss_list += [train_loss]
+
+    plot_loss_acc(len(valid_loss_list), train_loss_list, valid_loss_list, len(valid_acc_list), train_acc_list, valid_acc_list)
 
     return sigVerNet
 
@@ -225,7 +242,7 @@ def main():
     parser.add_argument('--model_type', choices=['small', 'test', 'best', 'best_small'], default='test')
     parser.add_argument('--baseline_margin', type=float, default=0.75)
     parser.add_argument('--triplet_margin', type=float, default=0.75)
-    parser.add_argument('--computer', type=str, default='terry')
+    parser.add_argument('--computer', type=str, default='yize')
 
     args = parser.parse_args()
 
@@ -296,7 +313,7 @@ def main():
 
     # define transformer
     sig_transformations = transforms.Compose([
-        transforms.Resize((105, 105)),
+        transforms.Resize((120, 200)),
         transforms.ToTensor()
 
     ])
@@ -354,8 +371,7 @@ def main():
 
     tripletNet = TripletNetwork()
     vgg_tripletNet = VggTriplet()
-    if torch.cuda.is_available():
-        vgg_tripletNet = vgg_tripletNet.cuda()
+    vgg_tripletNet = vgg_tripletNet.cuda()
 
     # net_after = baseline_train(args, sigVerNet, train_dataloader, eval_dataloader)
     # net_after = baseline_train(args, vggNet, train_dataloader, eval_dataloader)
