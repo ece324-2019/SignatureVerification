@@ -228,8 +228,7 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
 
 
         print("validation accuracy {}\n".format(eval_acc))
-        if epoch % 5 == 0 and epoch != 0:
-            torch.save(sigVerNet, '/content/models/triplet_sigVerNet_ep{}.pt'.format(epoch+1))
+        torch.save(sigVerNet, '/content/models/triplet_sigVerNet_ep{}.pt'.format(epoch+1))
 
 
 
