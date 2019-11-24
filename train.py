@@ -59,6 +59,7 @@ def plot_loss_acc(n, train_loss, valid_loss, m, train_acc, valid_acc, step):
     plt.title('prediction accuracy of training dataset')
 
     plt.savefig('/content/plots/triplet_sigVerNet_step{}.png'.format(step+1))
+    plt.close("all")
     #plt.show()
 
 
@@ -202,7 +203,7 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
             #print("pos_dist and neg_dist: ", dist_pos, dist_neg)
 
             for j in range(output1.shape[0]):
-                if (dist_neg[j] - dist_pos[j] > args.triplet_margin):
+                if (dist_neg[j] - dist_pos[j] > args.triplet_eval_margin):
                     print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "forgeries")
                     train_corr_num += 1
                     train_tot_num += 1
@@ -219,7 +220,7 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
             train_loss = loss_triplet.item()/data[0].shape[0]
 
 
-            if i % 100 == 0 and i != 0:
+            if i % 50 == 0 and i != 0:
                 eval_acc, eval_loss = eval_triplet_valid(args, sigVerNet, eval_dataloader)
                 valid_acc_list += [eval_acc]
                 valid_loss_list += [eval_loss]
@@ -227,12 +228,13 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
                 train_loss_list += [train_loss]
                 plot_loss_acc(len(valid_loss_list), train_loss_list, valid_loss_list, len(valid_acc_list),
                               train_acc_list, valid_acc_list, i)
+                torch.save(sigVerNet, '/content/models/triplet_sigVerNet_ep{}_step{}.pt'.format(epoch+1, i+1))
+
             print("Epoch number {} batch number {} running loss {} running acc {}".format(epoch + 1, i + 1, loss_triplet.item(), train_acc))
 
 
-
-        print("validation accuracy {}\n".format(eval_acc))
-        torch.save(sigVerNet, '/content/models/triplet_sigVerNet_ep{}.pt'.format(epoch+1))
+        #print("validation accuracy {}\n".format(eval_acc))
+        
 
 
 
@@ -247,7 +249,7 @@ def main():
         torch.set_default_tensor_type(torch.cuda.FloatTensor)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--batch_size', type=int, default=20)
+    parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--valid_size', type=int, default=4)
     parser.add_argument('--split_coefficient', type=int, default=0.2)
 
@@ -256,18 +258,23 @@ def main():
 
     parser.add_argument('--loss_type', choices=['mse', 'ce'], default='ce')
     parser.add_argument('--hidden_size', type=int, default=32)
-    parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--if_batch', type=bool, default=False)
     parser.add_argument('--num_kernel', type=int, default=30)
     parser.add_argument('--model_type', choices=['small', 'test', 'best', 'best_small'], default='test')
     parser.add_argument('--baseline_margin', type=float, default=0.75)
     parser.add_argument('--triplet_margin', type=float, default=2)
-    parser.add_argument('--triplet_eval_margin', type=float, default=1)
+    parser.add_argument('--triplet_eval_margin', type=float, default=0.8)
     parser.add_argument('--computer', type=str, default='google')
 
 
     args = parser.parse_args()
 
+    torch.manual_seed(args.seed)
+    torch.cuda.manual_seed(args.seed)
+    np.random.seed(args.seed)
+    random.seed(args.seed)
+    torch.backends.cudnn.deterministic=True
     num_of_names = 55
 
     # tri_train_csv = '20_train_triplet_list.csv'
@@ -347,7 +354,7 @@ def main():
 
     # define transformer
     sig_transformations = transforms.Compose([
-        transforms.Resize((200, 300)),
+        transforms.Resize((300, 400)),
         transforms.ToTensor()
 
     ])
