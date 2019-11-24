@@ -88,11 +88,13 @@ def eval_baseline(args, model, dataloader):
 def eval_triplet_valid(args, model, dataloader):
     tot_num = 0
     corr_num = 0
-
+    loss_accum = 0
+    criterion = torch.nn.TripletMarginLoss(margin=1.5)
     with torch.no_grad():
         for i, data in enumerate(dataloader, 0):
             anchor, pos, question, label = data
             output1, output2, output3 = model(anchor, pos, question)
+            loss_triplet = criterion(output1, output2, output3)
             dist_pos = F.pairwise_distance(output1, output2)
             dist_neg = F.pairwise_distance(output1, output3)
             print("distance: ", dist_pos, dist_neg)
@@ -103,8 +105,9 @@ def eval_triplet_valid(args, model, dataloader):
                     tot_num += 1
                 else:
                     tot_num += 1
+        loss_accum += loss_triplet
     print('corr_num: {} | tot_num: {}'.format(corr_num, tot_num))
-    return float(corr_num) / tot_num
+    return float(corr_num) / tot_num, loss_accum / tot_num
 
 
 def baseline_train(args, sigVerNet, dataloader, eval_dataloader):
@@ -155,6 +158,8 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
 
     train_loss_list = []
     train_acc_list = []
+    eval_loss_list = []
+    eval_acc_list = []
     for epoch in range(0, args.epochs):
         for i, data in enumerate(dataloader, 0):
             anchor, pos, neg = data
@@ -170,12 +175,13 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
             counter.append(iteration_number)
             loss_history.append(loss_triplet.item())
 
-        train_acc = eval_triplet(args, sigVerNet, eval_dataloader)
-        print(" training accuracy {}\n".format(train_acc))
+        eval_acc, eval_loss = eval_triplet_valid(args, sigVerNet, eval_dataloader)
+        print(" training accuracy {}\n".format(eval_acc))
         if epoch % 5 == 0 and epoch != 0:
             torch.save(sigVerNet, 'D:/1_Study/EngSci_Year3/ECE324_SigVer_project/triplet_sigVerNet_ep{}.pt'.format(epoch+1))
-        train_acc_list += [train_acc]
-    plot_loss_acc(len(train_loss_list), train_loss_list, len(train_acc_list), train_acc_list)
+        eval_acc_list += [eval_acc]
+        eval_loss_list += [eval_loss]
+    plot_loss_acc(len(eval_loss_list), eval_loss_list, len(eval_acc_list), eval_acc_list)
 
     return sigVerNet
 
@@ -191,7 +197,7 @@ def main():
     parser.add_argument('--split_coefficient', type=int, default=0.2)
 
     parser.add_argument('--lr', type=float, default=0.0001)
-    parser.add_argument('--epochs', type=int, default=50)
+    parser.add_argument('--epochs', type=int, default=5)
 
     parser.add_argument('--loss_type', choices=['mse', 'ce'], default='ce')
     parser.add_argument('--hidden_size', type=int, default=32)
