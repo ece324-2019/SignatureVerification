@@ -228,15 +228,13 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
                 train_loss_list += [train_loss]
                 plot_loss_acc(len(valid_loss_list), train_loss_list, valid_loss_list, len(valid_acc_list),
                               train_acc_list, valid_acc_list, i)
-                torch.save(sigVerNet, '/content/models/triplet_sigVerNet_ep{}_step{}.pt'.format(epoch+1, i+1))
 
+                if (eval_acc >= 0.7): 
+                    torch.save(sigVerNet, '/content/models/triplet_sigVerNet_ep{}_step{}.pt'.format(epoch+1, i+1))
             print("Epoch number {} batch number {} running loss {} running acc {}".format(epoch + 1, i + 1, loss_triplet.item(), train_acc))
-
 
         #print("validation accuracy {}\n".format(eval_acc))
         
-
-
 
 
 
@@ -249,7 +247,8 @@ def main():
         torch.set_default_tensor_type(torch.cuda.FloatTensor)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--batch_size', type=int, default=64)
+
+    parser.add_argument('--batch_size', type=int, default=30)
     parser.add_argument('--valid_size', type=int, default=4)
     parser.add_argument('--split_coefficient', type=int, default=0.2)
 
