@@ -404,8 +404,8 @@ def main():
     vggNet = VGG_SiameseNet()
 
     tripletNet = TripletNetwork()
-    vgg_tripletNet = VggTriplet()
-    vgg_tripletNet = vgg_tripletNet.cuda()
+    #vgg_tripletNet = VggTriplet()
+    #vgg_tripletNet = vgg_tripletNet.cuda()
 
     # net_after = baseline_train(args, sigVerNet, train_dataloader, eval_dataloader)
     # net_after = baseline_train(args, vggNet, train_dataloader, eval_dataloader)
