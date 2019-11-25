@@ -259,4 +259,3 @@ class VggTriplet(nn.Module):
         return output1, output2, output3  #CALLER: triplet_loss = nn.TripletMarginLoss(margin=1.0, p=2)
 
 
-test = VggTriplet()

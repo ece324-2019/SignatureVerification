@@ -183,9 +183,7 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
     train_acc = 0
     train_loss = 0
 
-
     for epoch in range(0, args.epochs):
-
         for i, data in enumerate(dataloader, 0):
             train_corr_num = 0
             train_tot_num = 0
@@ -199,12 +197,10 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
             #    imshow(torchvision.utils.make_grid(concat))
             anchor, pos, neg = anchor.cuda(), pos.cuda(), neg.cuda()
 
-
             optimizer.zero_grad()
             output1, output2, output3 = sigVerNet(anchor, pos, neg)
 
             dist = torch.nn.PairwiseDistance(p=2)
-
             dist_pos = dist(output1, output2)
             dist_neg = dist(output1, output3)
 
@@ -219,7 +215,6 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
                     print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "authentic")
                     train_tot_num += 1
 
-
             loss_triplet = criterion(output1, output2, output3)
             loss_triplet.backward()
             optimizer.step()
@@ -228,7 +223,7 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
             train_loss = loss_triplet.item()/data[0].shape[0]
 
 
-            if i % 50 == 0 and i != 0:
+            if i % 10 == 0 and i != 0:
                 eval_acc, eval_loss = eval_triplet_valid(args, sigVerNet, eval_dataloader)
                 valid_acc_list += [eval_acc]
                 valid_loss_list += [eval_loss]
@@ -242,10 +237,6 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
             print("Epoch number {} batch number {} running loss {} running acc {}".format(epoch + 1, i + 1, loss_triplet.item(), train_acc))
 
         #print("validation accuracy {}\n".format(eval_acc))
-        
-
-
-
     return sigVerNet
 
 
@@ -341,8 +332,8 @@ def main():
         # triplet_test_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_test_triplet_list.csv"
 
         triplet_train_csv = "/content/50k_train_triplet_list.csv"
-        triplet_valid_csv = "/content/20_valid_triplet_list.csv"
-        triplet_test_csv = "/content/20_valid_triplet_list.csv"
+        triplet_valid_csv = "20_valid_triplet_list_diff.csv"
+        triplet_test_csv = "20_valid_triplet_list_diff.csv"
 
     elif args.computer == 'yize':
         # yize
@@ -419,14 +410,21 @@ def main():
     #vggNet = VGG_SiameseNet()
 
 
-    tripletNet = TripletNetwork().cuda()
+
+
+    #tripletNet = TripletNetwork()
+    #tripletNet = tripletNet.cuda()
     #vgg_tripletNet = VggTriplet().cuda()
+    #vgg_tripletNet = vgg_tripletNet.cuda()
 
 
     # net_after = baseline_train(args, sigVerNet, train_dataloader, eval_dataloader)
     # net_after = baseline_train(args, vggNet, train_dataloader, eval_dataloader)
     #trp_after = triplet_train(args, tripletNet, triplet_train_dataloader, triplet_valid_dataloader)
+
     #trp_after = triplet_train(args, vgg_tripletNet, triplet_train_dataloader, triplet_valid_dataloader)
+
+
 
     model = torch.load("/content/models/triplet_sigVerNet_ep1_step551_71_bs_20_size_200_300.pt")
     test_acc, test_loss = eval_triplet_valid(args, model, test_dataloader)
