@@ -31,9 +31,12 @@ def convert2bi(input_path):
 
 
 def get_filename():
-    Tk().withdraw()
+    root = Tk()
+    root.attributes("-topmost", True)
+    root.withdraw()
     print("Initializing Dialogue... \nPlease select a file.\n")
     filename = askopenfilename(title='Please select one file')
+    Tk().deiconify()
     return filename
 
 
