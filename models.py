@@ -193,7 +193,7 @@ class VggTriplet(nn.Module):
         param_counter = 0
         for param in self.vgg16.features.parameters():
             param_counter += 1
-            if param_counter <= 22:
+            if param_counter <= 40:
                 param.require_grad = False
             else:
                 param.require_grad = True

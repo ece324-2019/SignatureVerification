@@ -189,9 +189,17 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
         for i, data in enumerate(dataloader, 0):
             train_corr_num = 0
             train_tot_num = 0
+            #concatenated = torch.cat((example_batch[0], example_batch[1], example_batch[2]), 0)
+            #imshow(torchvision.utils.make_grid(concatenated))
 
             anchor, pos, neg = data
+
+            #for i in range (data[0].shape[0]): 
+            #    concat = torch.cat((anchor[i], pos[i], neg[i]), 0)
+            #    imshow(torchvision.utils.make_grid(concat))
             anchor, pos, neg = anchor.cuda(), pos.cuda(), neg.cuda()
+
+
             optimizer.zero_grad()
             output1, output2, output3 = sigVerNet(anchor, pos, neg)
 
@@ -248,7 +256,7 @@ def main():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--batch_size', type=int, default=30)
+    parser.add_argument('--batch_size', type=int, default=20)
     parser.add_argument('--valid_size', type=int, default=4)
     parser.add_argument('--split_coefficient', type=int, default=0.2)
 
@@ -332,8 +340,8 @@ def main():
         # triplet_test_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_test_triplet_list.csv"
 
         triplet_train_csv = "/content/50k_train_triplet_list.csv"
-        triplet_valid_csv = "/content/200_valid_triplet_list.csv"
-        triplet_test_csv = "/content/200_valid_triplet_list.csv"
+        triplet_valid_csv = "/content/20_valid_triplet_list.csv"
+        triplet_test_csv = "/content/20_valid_triplet_list.csv"
 
     elif args.computer == 'yize':
         # yize
@@ -353,7 +361,7 @@ def main():
 
     # define transformer
     sig_transformations = transforms.Compose([
-        transforms.Resize((300, 400)),
+        transforms.Resize((200, 300)),
         transforms.ToTensor()
 
     ])
