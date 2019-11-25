@@ -59,6 +59,7 @@ def plot_loss_acc(n, train_loss, valid_loss, m, train_acc, valid_acc, step):
     plt.title('prediction accuracy of training dataset')
 
     plt.savefig('/content/plots/triplet_sigVerNet_step{}.png'.format(step+1))
+    plt.close("all")
     #plt.show()
 
 
@@ -188,9 +189,17 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
         for i, data in enumerate(dataloader, 0):
             train_corr_num = 0
             train_tot_num = 0
+            #concatenated = torch.cat((example_batch[0], example_batch[1], example_batch[2]), 0)
+            #imshow(torchvision.utils.make_grid(concatenated))
 
             anchor, pos, neg = data
+
+            #for i in range (data[0].shape[0]): 
+            #    concat = torch.cat((anchor[i], pos[i], neg[i]), 0)
+            #    imshow(torchvision.utils.make_grid(concat))
             anchor, pos, neg = anchor.cuda(), pos.cuda(), neg.cuda()
+
+
             optimizer.zero_grad()
             output1, output2, output3 = sigVerNet(anchor, pos, neg)
 
@@ -202,7 +211,7 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
             #print("pos_dist and neg_dist: ", dist_pos, dist_neg)
 
             for j in range(output1.shape[0]):
-                if (dist_neg[j] - dist_pos[j] > args.triplet_margin):
+                if (dist_neg[j] - dist_pos[j] > args.triplet_eval_margin):
                     print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "forgeries")
                     train_corr_num += 1
                     train_tot_num += 1
@@ -219,7 +228,7 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
             train_loss = loss_triplet.item()/data[0].shape[0]
 
 
-            if i % 100 == 0 and i != 0:
+            if i % 50 == 0 and i != 0:
                 eval_acc, eval_loss = eval_triplet_valid(args, sigVerNet, eval_dataloader)
                 valid_acc_list += [eval_acc]
                 valid_loss_list += [eval_loss]
@@ -227,18 +236,18 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
                 train_loss_list += [train_loss]
                 plot_loss_acc(len(valid_loss_list), train_loss_list, valid_loss_list, len(valid_acc_list),
                               train_acc_list, valid_acc_list, i)
+
+                if (eval_acc >= 0.7): 
+                    torch.save(sigVerNet, '/content/models/triplet_sigVerNet_ep{}_step{}.pt'.format(epoch+1, i+1))
             print("Epoch number {} batch number {} running loss {} running acc {}".format(epoch + 1, i + 1, loss_triplet.item(), train_acc))
 
-
-
-        print("validation accuracy {}\n".format(eval_acc))
-        torch.save(sigVerNet, '/content/models/triplet_sigVerNet_ep{}.pt'.format(epoch+1))
-
-
+        #print("validation accuracy {}\n".format(eval_acc))
+        
 
 
 
     return sigVerNet
+
 
 
 def main():
@@ -247,6 +256,7 @@ def main():
         torch.set_default_tensor_type(torch.cuda.FloatTensor)
 
     parser = argparse.ArgumentParser()
+
     parser.add_argument('--batch_size', type=int, default=20)
     parser.add_argument('--valid_size', type=int, default=4)
     parser.add_argument('--split_coefficient', type=int, default=0.2)
@@ -256,18 +266,23 @@ def main():
 
     parser.add_argument('--loss_type', choices=['mse', 'ce'], default='ce')
     parser.add_argument('--hidden_size', type=int, default=32)
-    parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--if_batch', type=bool, default=False)
     parser.add_argument('--num_kernel', type=int, default=30)
     parser.add_argument('--model_type', choices=['small', 'test', 'best', 'best_small'], default='test')
     parser.add_argument('--baseline_margin', type=float, default=0.75)
     parser.add_argument('--triplet_margin', type=float, default=2)
-    parser.add_argument('--triplet_eval_margin', type=float, default=1)
+    parser.add_argument('--triplet_eval_margin', type=float, default=0.8)
     parser.add_argument('--computer', type=str, default='google')
 
 
     args = parser.parse_args()
 
+    torch.manual_seed(args.seed)
+    torch.cuda.manual_seed(args.seed)
+    np.random.seed(args.seed)
+    random.seed(args.seed)
+    torch.backends.cudnn.deterministic=True
     num_of_names = 55
 
     # tri_train_csv = '20_train_triplet_list.csv'
@@ -326,8 +341,8 @@ def main():
         # triplet_test_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_test_triplet_list.csv"
 
         triplet_train_csv = "/content/50k_train_triplet_list.csv"
-        triplet_valid_csv = "/content/200_valid_triplet_list.csv"
-        triplet_test_csv = "/content/200_valid_triplet_list.csv"
+        triplet_valid_csv = "/content/20_valid_triplet_list.csv"
+        triplet_test_csv = "/content/20_valid_triplet_list.csv"
 
     elif args.computer == 'yize':
         # yize
@@ -400,17 +415,21 @@ def main():
     imshow(torchvision.utils.make_grid(concatenated))
     # print(example_batch[3].numpy())
 
-    sigVerNet = SiameseNetwork()
-    vggNet = VGG_SiameseNet()
+    #sigVerNet = SiameseNetwork()
+    #vggNet = VGG_SiameseNet()
 
-    tripletNet = TripletNetwork()
-    #vgg_tripletNet = VggTriplet()
-    #vgg_tripletNet = vgg_tripletNet.cuda()
+
+    tripletNet = TripletNetwork().cuda()
+    #vgg_tripletNet = VggTriplet().cuda()
+
 
     # net_after = baseline_train(args, sigVerNet, train_dataloader, eval_dataloader)
     # net_after = baseline_train(args, vggNet, train_dataloader, eval_dataloader)
-    # trp_after = triplet_train(args, tripletNet, tri_train_dataloader, tri_eval_dataloader)
-    trp_after = triplet_train(args, vgg_tripletNet, triplet_train_dataloader, triplet_valid_dataloader)
+    #trp_after = triplet_train(args, tripletNet, triplet_train_dataloader, triplet_valid_dataloader)
+    #trp_after = triplet_train(args, vgg_tripletNet, triplet_train_dataloader, triplet_valid_dataloader)
+
+    model = torch.load("/content/models/triplet_sigVerNet_ep1_step551_71_bs_20_size_200_300.pt")
+    test_acc, test_loss = eval_triplet_valid(args, model, test_dataloader)
 
 
 if __name__ == "__main__":

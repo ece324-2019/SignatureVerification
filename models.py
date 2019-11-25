@@ -33,7 +33,7 @@ class SiameseNetwork(nn.Module):
 
         # Defining the fully connected layers
         self.fc1 = nn.Sequential(
-            nn.Linear(36864, 1024),
+            nn.Linear(30976, 1024),
             nn.ReLU(inplace=True),
             nn.Dropout2d(p=0.5),
 
@@ -85,7 +85,7 @@ class TripletNetwork(nn.Module):
 
         # Defining the fully connected layers
         self.fc1 = nn.Sequential(
-            nn.Linear(30976, 1024),
+            nn.Linear(197120, 1024),
             nn.ReLU(inplace=True),
             nn.Dropout2d(p=0.5),
 
@@ -188,12 +188,12 @@ class VggTriplet(nn.Module):
         super(VggTriplet, self).__init__()
 
         # transfer learning
-        self.vgg16 = models.vgg16_bn(pretrained=True)
-        # self.vgg16.load_state_dict(torch.load("../input/vgg16bn/vgg16_bn.pth"))
+        self.vgg16 = models.vgg16(pretrained=True)
+        # self.vgg16.load_state_dict(torch.load("../input/vgg16/vgg16.pth"))
         param_counter = 0
         for param in self.vgg16.features.parameters():
             param_counter += 1
-            if param_counter <= 22:
+            if param_counter <= 13:
                 param.require_grad = False
             else:
                 param.require_grad = True
@@ -257,3 +257,6 @@ class VggTriplet(nn.Module):
         output3 = self.forward_once(input3)
 
         return output1, output2, output3  #CALLER: triplet_loss = nn.TripletMarginLoss(margin=1.0, p=2)
+
+
+test = VggTriplet()
