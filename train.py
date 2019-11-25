@@ -228,7 +228,7 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
             train_loss = loss_triplet.item()/data[0].shape[0]
 
 
-            if i % 50 == 0 and i != 0:
+            if i % 10 == 0 and i != 0:
                 eval_acc, eval_loss = eval_triplet_valid(args, sigVerNet, eval_dataloader)
                 valid_acc_list += [eval_acc]
                 valid_loss_list += [eval_loss]
@@ -340,8 +340,8 @@ def main():
         # triplet_test_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_test_triplet_list.csv"
 
         triplet_train_csv = "/content/50k_train_triplet_list.csv"
-        triplet_valid_csv = "/content/20_valid_triplet_list.csv"
-        triplet_test_csv = "/content/20_valid_triplet_list.csv"
+        triplet_valid_csv = "20_valid_triplet_list_diff.csv"
+        triplet_test_csv = "20_valid_triplet_list_diff.csv"
 
     elif args.computer == 'yize':
         # yize
@@ -417,14 +417,15 @@ def main():
     #sigVerNet = SiameseNetwork()
     #vggNet = VGG_SiameseNet()
 
-    tripletNet = TripletNetwork().cuda()
-    #vgg_tripletNet = VggTriplet().cuda()
-    #vgg_tripletNet = vgg_tripletNet.cuda()
+    #tripletNet = TripletNetwork()
+    #tripletNet = tripletNet.cuda()
+    vgg_tripletNet = VggTriplet().cuda()
+    vgg_tripletNet = vgg_tripletNet.cuda()
 
     # net_after = baseline_train(args, sigVerNet, train_dataloader, eval_dataloader)
     # net_after = baseline_train(args, vggNet, train_dataloader, eval_dataloader)
-    trp_after = triplet_train(args, tripletNet, triplet_train_dataloader, triplet_valid_dataloader)
-    #trp_after = triplet_train(args, vgg_tripletNet, triplet_train_dataloader, triplet_valid_dataloader)
+    #trp_after = triplet_train(args, tripletNet, triplet_train_dataloader, triplet_valid_dataloader)
+    trp_after = triplet_train(args, vgg_tripletNet, triplet_train_dataloader, triplet_valid_dataloader)
 
 
 if __name__ == "__main__":
