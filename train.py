@@ -414,17 +414,17 @@ def main():
     imshow(torchvision.utils.make_grid(concatenated))
     # print(example_batch[3].numpy())
 
-    sigVerNet = SiameseNetwork()
-    vggNet = VGG_SiameseNet()
+    #sigVerNet = SiameseNetwork()
+    #vggNet = VGG_SiameseNet()
 
-    tripletNet = TripletNetwork()
-    vgg_tripletNet = VggTriplet()
-    vgg_tripletNet = vgg_tripletNet.cuda()
+    tripletNet = TripletNetwork().cuda()
+    #vgg_tripletNet = VggTriplet().cuda()
+    #vgg_tripletNet = vgg_tripletNet.cuda()
 
     # net_after = baseline_train(args, sigVerNet, train_dataloader, eval_dataloader)
     # net_after = baseline_train(args, vggNet, train_dataloader, eval_dataloader)
-    # trp_after = triplet_train(args, tripletNet, tri_train_dataloader, tri_eval_dataloader)
-    trp_after = triplet_train(args, vgg_tripletNet, triplet_train_dataloader, triplet_valid_dataloader)
+    trp_after = triplet_train(args, tripletNet, triplet_train_dataloader, triplet_valid_dataloader)
+    #trp_after = triplet_train(args, vgg_tripletNet, triplet_train_dataloader, triplet_valid_dataloader)
 
 
 if __name__ == "__main__":
