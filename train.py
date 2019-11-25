@@ -183,9 +183,7 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
     train_acc = 0
     train_loss = 0
 
-
     for epoch in range(0, args.epochs):
-
         for i, data in enumerate(dataloader, 0):
             train_corr_num = 0
             train_tot_num = 0
@@ -199,12 +197,10 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
             #    imshow(torchvision.utils.make_grid(concat))
             anchor, pos, neg = anchor.cuda(), pos.cuda(), neg.cuda()
 
-
             optimizer.zero_grad()
             output1, output2, output3 = sigVerNet(anchor, pos, neg)
 
             dist = torch.nn.PairwiseDistance(p=2)
-
             dist_pos = dist(output1, output2)
             dist_neg = dist(output1, output3)
 
@@ -218,7 +214,6 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
                 else:
                     print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "authentic")
                     train_tot_num += 1
-
 
             loss_triplet = criterion(output1, output2, output3)
             loss_triplet.backward()
@@ -242,10 +237,6 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
             print("Epoch number {} batch number {} running loss {} running acc {}".format(epoch + 1, i + 1, loss_triplet.item(), train_acc))
 
         #print("validation accuracy {}\n".format(eval_acc))
-        
-
-
-
     return sigVerNet
 
 
