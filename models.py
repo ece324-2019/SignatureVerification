@@ -33,7 +33,7 @@ class SiameseNetwork(nn.Module):
 
         # Defining the fully connected layers
         self.fc1 = nn.Sequential(
-            nn.Linear(36864, 1024),
+            nn.Linear(30976, 1024),
             nn.ReLU(inplace=True),
             nn.Dropout2d(p=0.5),
 
@@ -85,7 +85,7 @@ class TripletNetwork(nn.Module):
 
         # Defining the fully connected layers
         self.fc1 = nn.Sequential(
-            nn.Linear(30976, 1024),
+            nn.Linear(197120, 1024),
             nn.ReLU(inplace=True),
             nn.Dropout2d(p=0.5),
 
