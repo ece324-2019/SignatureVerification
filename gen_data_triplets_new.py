@@ -29,51 +29,27 @@ command for getting smaller dataset:
 '''
 
 base_dir = '/Users/yizezhao/PycharmProjects/ece324/sigver/'
-train_auth_path = base_dir + 'splitted_train_auth.txt'
-train_forg_path = base_dir + 'splitted_train_forg.txt'
-valid_auth_path = base_dir + 'splitted_valid_auth.txt'
-valid_forg_path = base_dir + 'splitted_valid_forg.txt'
-test_auth_path = base_dir + 'splitted_test_auth.txt'
-test_forg_path = base_dir + 'splitted_test_forg.txt'
+test_auth_path = base_dir + 'sigcomp_test_orig.txt'
+test_forg_path = base_dir + 'sigcomp_test_forg.txt'
 
-train_paired_path = 'train_paried_list.csv'
-valid_paried_path = '/Users/yizezhao/PycharmProjects/ece324/sigver/valid_triplet_list.csv'
-test_paried_path = '/Users/yizezhao/PycharmProjects/ece324/sigver/test_triplet_list.csv'
 
-total_name = 215
 
-forg_names = []
-auth_names = []
-valid_forg_names = []
-valid_auth_names = []
+test_triplet_path = '/Users/yizezhao/PycharmProjects/ece324/sigver/test_triplet_list_new.csv'
+
+names = ['001', '002', '003', '004', '006', '009', '012', '014', '015', '016']
+
+
 test_forg_names = []
 test_auth_names = []
 
-for i in range(1, total_name + 1):
-
-    if (i <= 6):  # valid
-        forg_names.append(base_dir + 'temp_lists/valid_forg_' + str(i) + '.txt')
-        print(forg_names[i - 1])
-        # open(forg_names[i - 1], 'a').close()
-        auth_names.append(base_dir + 'temp_lists/valid_auth_' + str(i) + '.txt')
-        print(auth_names[i - 1])
-        # open(valid_forg_names[i - 1], 'a').close()
-
-    elif (i <= 15):  # test
-        forg_names.append(base_dir + 'temp_lists/test_forg_' + str(i) + '.txt')
-        print(forg_names[i - 1])
-        # open(test_forg_names[i], 'a').close()
-        auth_names.append(base_dir + 'temp_lists/test_auth_' + str(i) + '.txt')
-        print(auth_names[i - 1])
-        # open(test_forg_names[i - 6 - 1], 'a').close()
-    else:
-        forg_names.append(base_dir + 'temp_lists/train_forg_' + str(i) + '.txt')
-        print(forg_names[i - 1])
-        # open(train_forg_names[i - 15 - 1], 'a').close()
-        auth_names.append(base_dir + 'temp_lists/train_auth_' + str(i) + '.txt')
-        print(auth_names[i - 1])
-        # open(train_forg_names[i - 15 - 1], 'a').close()
-        print(i)
+for i, id in enumerate(names):
+    test_forg_names.append(base_dir + 'temp_lists/test_forg_' + id + '.txt')
+    print(test_forg_names[i])
+    open(test_forg_names[i], 'a').close()
+    test_auth_names.append(base_dir + 'temp_lists/test_auth_' + id + '.txt')
+    print(test_auth_names[i])
+    open(test_auth_names[i], 'a').close()
+    print(i)
 
 '''
 the following lnes generate lists of data according to names
@@ -134,25 +110,27 @@ START GENERATING NAME LISIS
 # with open(test_auth_path, 'r') as t_auth_path:
 #     for cnt, line in enumerate(t_auth_path):
 #         line = line.rstrip()
-#         #signatures/train/name_55_auth/original_55_5.png
+#         #sigComp2011-trainingSet-bi/016_forg/0202016_04.png
+#         #sigComp2011-trainingSet-bi/016_orig/016_24.PNG
 #         name = re.match(
-#             r'split_signature/.*name_(.*?)_auth.*.png', line)
-#         print("index", int(name.group(1))-1)
-#         with open(auth_names[int(name.group(1))-1], 'a') as temp:
+#             r'sigComp2011-trainingSet-bi/(.*?)_orig/.*', line)
+#         print("index", name.group(1))
+#         with open(base_dir + 'temp_lists/test_auth_' + name.group(1) + '.txt', 'a') as temp:
 #             temp.write(line + '\n')
-#             print(auth_names[int(name.group(1))-1])
+#             print(base_dir + 'temp_lists/test_auth_' + name.group(1) + '.txt')
 #             print(line)
 #
 # with open(test_forg_path, 'r') as t_forg_path:
 #     for cnt, line in enumerate(t_forg_path):
 #         line = line.rstrip()
-#         #signatures/train/name_55_forg/forgeries_55_9.png
+#         #sigComp2011-trainingSet-bi/016_forg/0202016_04.png
+#         #sigComp2011-trainingSet-bi/016_orig/016_24.PNG
 #         name = re.match(
-#             r'split_signature/.*name_(.*?)_forg.*.png', line)
-#         print("index", int(name.group(1))-1)
-#         with open(forg_names[int(name.group(1))-1], 'a') as temp:
+#             r'sigComp2011-trainingSet-bi/(.*?)_forg/.*', line)
+#         print("index", name.group(1))
+#         with open(base_dir + 'temp_lists/test_forg_' + name.group(1) + '.txt', 'a') as temp:
 #             temp.write(line + '\n')
-#             print(forg_names[int(name.group(1))-1])
+#             print(base_dir + 'temp_lists/test_forg_' + name.group(1) + '.txt')
 #             print(line)
 '''
     END OF GENERATING NAME LISTS
@@ -162,17 +140,11 @@ START GENERATING NAME LISIS
     the next session of the code will iterate all lists and generating parings (positive and negative) that comes from the same name
 '''
 # auth_last = None
-with open(train_paired_path, 'a') as train_pair, open(valid_paried_path, 'a') as valid_pair, \
-        open(test_paried_path, 'a') as test_pair:
-    for i in range(1,  16):
-        if (i <= 6):
-            writing = valid_pair
-        else:
-            writing = test_pair
+with open(test_triplet_path, 'a') as test_triplet:
+    for i in range(0, len(test_forg_names)):
 
-
-        with open(forg_names[i - 1], 'r') as forg_lists, \
-                open(auth_names[i - 1], 'r') as auth_lists:
+        with open(test_forg_names[i], 'r') as forg_lists, \
+                open(test_auth_names[i], 'r') as auth_lists:
             auth_lists_itr = [line.strip() for line in auth_lists]
             auth_lists_itr_2 = auth_lists_itr.copy()
             auth_lists_itr_3 = auth_lists_itr.copy()
@@ -183,9 +155,9 @@ with open(train_paired_path, 'a') as train_pair, open(valid_paried_path, 'a') as
             for c1, auth_line in enumerate(auth_lists_itr):
                 for c2, auth_line_2 in enumerate(auth_lists_itr_2):
                     for c3, auth_line_3 in enumerate(auth_lists_itr_3):
-                        writing.write(auth_line + ',' + auth_line_2 + ',' + auth_line_3 + ',' + '0' + '\n')
+                        test_triplet.write(auth_line + ',' + auth_line_2 + ',' + auth_line_3 + ',' + '0' + '\n')
 
             for c1, auth_line in enumerate(auth_lists_itr):
                 for c2, auth_line_2 in enumerate(auth_lists_itr_2):
                     for c3, forg_line in enumerate(forg_lists_itr):
-                        writing.write(auth_line + ',' + auth_line_2 + ',' + forg_line + ',' + '1' + '\n')
+                        test_triplet.write(auth_line + ',' + auth_line_2 + ',' + forg_line + ',' + '1' + '\n')
