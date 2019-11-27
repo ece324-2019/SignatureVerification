@@ -79,7 +79,6 @@ class TripletDataset():
 
 class Triplet_Eval_Dataset():
 
-
     def __init__(self, csv=None, dir=None, transform=None):
         # used to prepare the labels and images path
         self.training_df = pd.read_csv(csv)
