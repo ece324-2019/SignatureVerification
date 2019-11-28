@@ -30,6 +30,7 @@ from helpers import *
 from loss import *
 from models import *
 
+
 '''
     path of images (name-forg)  1-0 1-1  2-0 2-2  3-0 3-3 ......
     randomly choose 6 names for validation and 9 names for test
@@ -37,6 +38,27 @@ from models import *
     
     each triplet: load three images -> convert to binary -> do calculations -> cut images -> bucketIterator -> load 
 '''
+
+
+def make_conf_matrix(args, testloader, net):
+    pred_list = []
+    labels_list = []
+    for data in testloader:
+        img0, img1, img2, label = data
+        output1, output2, output3 = net(img0, img1, img2)
+
+        dist = torch.nn.PairwiseDistance(p=2)
+        dist_pos = dist(output1, output2)
+        dist_neg = dist(output1, output3)
+
+        for j in range(output1.shape[0]):
+            labels_list.append(label[j])
+            if dist_neg[j] - dist_pos[j] > args.triplet_eval_margin:
+                pred_list.append(1)
+            else:
+                pred_list.append(0)
+
+    return confusion_matrix(labels_list, pred_list)
 
 
 def plot_loss_acc(n, train_loss, valid_loss, m, train_acc, valid_acc, step):
@@ -61,7 +83,6 @@ def plot_loss_acc(n, train_loss, valid_loss, m, train_acc, valid_acc, step):
     plt.savefig('/content/plots/triplet_sigVerNet_step{}.png'.format(step+1))
     plt.close("all")
     #plt.show()
-
 
 
 def eval_baseline(args, model, dataloader):
