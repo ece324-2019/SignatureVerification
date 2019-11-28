@@ -302,7 +302,9 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader, eval_dataloader_
                 valid_loss_list += [eval_loss_2]
                 train_acc_list += [train_acc]
                 train_loss_list += [train_loss]
-                print()
+                print("valid acc on cedar: ", eval_acc)
+                print("valid acc on dutch: ", eval_acc_2)
+
                 if (eval_acc >= 0.7 or eval_acc_2 >= 0.7): 
                     torch.save(sigVerNet, '/content/models/triplet_sigVerNet_ep{}_step{}.pt'.format(epoch+1, i+1))
             if i % 10 == 0 and i != 0: 
@@ -326,7 +328,7 @@ def main():
     parser.add_argument('--valid_size', type=int, default=4)
     parser.add_argument('--split_coefficient', type=int, default=0.2)
 
-    parser.add_argument('--lr', type=float, default=0.01)
+    parser.add_argument('--lr', type=float, default=0.0001)
     parser.add_argument('--epochs', type=int, default=5)
 
     parser.add_argument('--loss_type', choices=['mse', 'ce'], default='ce')
