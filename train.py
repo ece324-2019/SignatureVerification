@@ -157,19 +157,19 @@ def eval_triplet_valid(args, model, dataloader):
             print("distance: ", dist_pos, dist_neg)
             for j in range(output1.shape[0]):
                 if (dist_neg[j] - dist_pos[j] > args.triplet_eval_margin and label[j] == 1):
-                    print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "forgeries", "correct 1")
+                    #print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "forgeries", "correct 1")
                     corr_num += 1
                     tot_num += 1
                 elif (dist_neg[j] - dist_pos[j] <= args.triplet_eval_margin and label[j] == 0):
-                    print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "authentic", "correct 0")
+                    #print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "authentic", "correct 0")
                     corr_num += 1
                     tot_num += 1
                 else:
                     tot_num += 1
-                    if (label[j] == 1): 
-                        print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "authentic", "incorrect 1")
-                    else: 
-                        print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "forgeries", "incorrect 0")
+                    # if (label[j] == 1): 
+                    #     print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "authentic", "incorrect 1")
+                    # else: 
+                    #     print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "forgeries", "incorrect 0")
                     
         loss_accum += loss_triplet
     print('corr_num: {} | tot_num: {}'.format(corr_num, tot_num))
@@ -235,7 +235,7 @@ def baseline_train(args, sigVerNet, dataloader, eval_dataloader):
     return sigVerNet
 
 
-def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
+def triplet_train(args, sigVerNet, dataloader, eval_dataloader, eval_dataloader_2):
     batch_train_acc_list = []
     iteration_number = 0
 
@@ -280,11 +280,11 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
 
             for j in range(output1.shape[0]):
                 if (dist_neg[j] - dist_pos[j] > args.triplet_eval_margin):
-                    print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "forgeries")
+                    # print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "forgeries")
                     train_corr_num += 1
                     train_tot_num += 1
                 else:
-                    print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "authentic")
+                    # print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "authentic")
                     train_tot_num += 1
 
             loss_triplet = criterion(output1, output2, output3)
@@ -295,17 +295,19 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
             train_loss = loss_triplet.item()/data[0].shape[0]
 
 
-            if i % 10 == 0 and i != 0:
+            if i % 30 == 0 and i != 0:
                 eval_acc, eval_loss = eval_triplet_valid(args, sigVerNet, eval_dataloader)
-                valid_acc_list += [eval_acc]
-                valid_loss_list += [eval_loss]
+                eval_acc_2, eval_loss_2 = eval_triplet_valid(args, sigVerNet, eval_dataloader_2)
+                valid_acc_list += [eval_acc_2]
+                valid_loss_list += [eval_loss_2]
                 train_acc_list += [train_acc]
                 train_loss_list += [train_loss]
+                print()
+                if (eval_acc >= 0.7 or eval_acc_2 >= 0.7): 
+                    torch.save(sigVerNet, '/content/models/triplet_sigVerNet_ep{}_step{}.pt'.format(epoch+1, i+1))
+            if i % 10 == 0 and i != 0: 
                 plot_loss_acc(len(valid_loss_list), train_loss_list, valid_loss_list, len(valid_acc_list),
                               train_acc_list, valid_acc_list, i)
-
-                if (eval_acc >= 0.7): 
-                    torch.save(sigVerNet, '/content/models/triplet_sigVerNet_ep{}_step{}.pt'.format(epoch+1, i+1))
             print("Epoch number {} batch number {} running loss {} running acc {}".format(epoch + 1, i + 1, loss_triplet.item(), train_acc))
 
         #print("validation accuracy {}\n".format(eval_acc))
@@ -403,8 +405,9 @@ def main():
         # triplet_valid_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_valid_triplet_list.csv"
         # triplet_test_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_test_triplet_list.csv"
 
-        triplet_train_csv = "/content/50k_train_triplet_list.csv"
-        triplet_valid_csv = "20_valid_triplet_list_diff.csv"
+        triplet_train_csv = "/content/10k_train_triplet_new.csv"
+        triplet_valid_csv = "/content/200_valid_triplet_list.csv"
+        triplet_valid_csv_2 = "/content/200_test_triplet_list_new.csv"
         triplet_test_csv = "/content/500_test_triplet_list.csv"
 
     elif args.computer == 'yize':
@@ -450,23 +453,29 @@ def main():
     #                              batch_size=args.batch_size)
 
     # data pipeline for triplet
-    # triplet_dataset = TripletDataset(csv=triplet_train_csv, dir=data_base_dir,
-    #                                  transform=sig_transformations)
-    # triplet_train_dataloader = DataLoader(triplet_dataset,
-    #                                       shuffle=True,
-    #                                       batch_size=args.batch_size)
-
-    # triplet_valid_dataset = Triplet_Eval_Dataset(csv=triplet_valid_csv, dir=data_base_dir,
-    #                                              transform=sig_transformations)
-    # triplet_valid_dataloader = DataLoader(triplet_valid_dataset,
-    #                                       shuffle=True,
-    #                                       batch_size=args.batch_size)
-
-    triplet_test_dataset = Triplet_Eval_Dataset(csv = triplet_test_csv, dir = data_base_dir,
-                                                 transform = sig_transformations)
-    triplet_test_dataloader = DataLoader(triplet_test_dataset,
+    triplet_dataset = TripletDataset(csv=triplet_train_csv, dir=data_base_dir,
+                                     transform=sig_transformations)
+    triplet_train_dataloader = DataLoader(triplet_dataset,
                                           shuffle=True,
-                                          batch_size=5)
+                                          batch_size=args.batch_size)
+
+    triplet_valid_dataset = Triplet_Eval_Dataset(csv=triplet_valid_csv, dir=data_base_dir,
+                                                 transform=sig_transformations)
+    triplet_valid_dataloader = DataLoader(triplet_valid_dataset,
+                                          shuffle=True,
+                                          batch_size=args.batch_size)
+
+    triplet_valid_dataset_2 = Triplet_Eval_Dataset(csv=triplet_valid_csv_2, dir=data_base_dir,
+                                                 transform=sig_transformations)
+    triplet_valid_dataloader_2 = DataLoader(triplet_valid_dataset_2,
+                                          shuffle=True,
+                                          batch_size=args.batch_size)                                          
+
+    # triplet_test_dataset = Triplet_Eval_Dataset(csv = triplet_test_csv, dir = data_base_dir,
+    #                                              transform = sig_transformations)
+    # triplet_test_dataloader = DataLoader(triplet_test_dataset,
+    #                                       shuffle=True,
+    #                                       batch_size=5)
 
     # vis_dataloader = DataLoader(triplet_dataset,
     #                             shuffle=True,
@@ -486,7 +495,7 @@ def main():
 
     #tripletNet = TripletNetwork()
     #tripletNet = tripletNet.cuda()
-    #vgg_tripletNet = VggTriplet().cuda()
+    vgg_tripletNet = VggTriplet().cuda()
     #vgg_tripletNet = vgg_tripletNet.cuda()
 
 
@@ -494,7 +503,7 @@ def main():
     # net_after = baseline_train(args, vggNet, baseline_train_dataloader, valid_dataloader)
     # trp_after = triplet_train(args, tripletNet, triplet_train_dataloader, triplet_valid_dataloader)
 
-    # trp_after = triplet_train(args, vgg_tripletNet, triplet_train_dataloader, triplet_valid_dataloader)
+    trp_after = triplet_train(args, vgg_tripletNet, triplet_train_dataloader, triplet_valid_dataloader, triplet_valid_dataloader_2)
 
 
 
@@ -502,8 +511,8 @@ def main():
     # test_acc = eval_baseline(args, model, test_dataloader)
     # print("test acc: ", test_acc)
 
-    model = torch.load("/content/triplet_sigVerNet_ep1_step401.pt")
-    test_acc, test_loss = get_confusion_matrix(args, model, triplet_test_dataloader )
+    # model = torch.load("/content/triplet_sigVerNet_ep1_step401.pt")
+    # test_acc, test_loss = get_confusion_matrix(args, model, triplet_test_dataloader )
 
 
 
