@@ -162,6 +162,35 @@ START GENERATING NAME LISIS
     the next session of the code will iterate all lists and generating parings (positive and negative) that comes from the same name
 '''
 # auth_last = None
+# generate testing and validation csv
+with open(train_paired_path, 'a') as train_pair, open(valid_paried_path, 'a') as valid_pair, \
+        open(test_paried_path, 'a') as test_pair:
+    for i in range(1,  16):
+        if (i <= 6):
+            writing = valid_pair
+        else:
+            writing = test_pair
+
+
+        with open(forg_names[i - 1], 'r') as forg_lists, \
+                open(auth_names[i - 1], 'r') as auth_lists:
+            auth_lists_itr = [line.strip() for line in auth_lists]
+            auth_lists_itr_2 = auth_lists_itr.copy()
+            auth_lists_itr_3 = auth_lists_itr.copy()
+
+            forg_lists_itr = [line.strip() for line in forg_lists]
+
+            # write forgery pair (1)
+            for c1, auth_line in enumerate(auth_lists_itr):
+                for c2, auth_line_2 in enumerate(auth_lists_itr_2):
+                    for c3, auth_line_3 in enumerate(auth_lists_itr_3):
+                        writing.write(auth_line + ',' + auth_line_2 + ',' + auth_line_3 + ',' + '0' + '\n')
+
+            for c1, auth_line in enumerate(auth_lists_itr):
+                for c2, auth_line_2 in enumerate(auth_lists_itr_2):
+                    for c3, forg_line in enumerate(forg_lists_itr):
+                        writing.write(auth_line + ',' + auth_line_2 + ',' + forg_line + ',' + '1' + '\n')
+
 with open(train_paired_path, 'a') as train_pair, open(valid_paried_path, 'a') as valid_pair, \
         open(test_paried_path, 'a') as test_pair:
     for i in range(1,  16):

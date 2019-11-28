@@ -39,6 +39,54 @@ from models import *
     each triplet: load three images -> convert to binary -> do calculations -> cut images -> bucketIterator -> load 
 '''
 
+def get_confusion_matrix(args, model, dataloader):
+    tot_num = 0
+    corr_num = 0
+    loss_accum = 0
+    
+    #criterion = torch.nn.TripletMarginLoss(margin=args.triplet_margin)
+    with torch.no_grad():
+        for i, data in enumerate(dataloader, 0):
+            anchor, pos, question, label = data
+            anchor, pos, question, label = anchor.cuda(), pos.cuda(), question.cuda(), label.cuda()
+            output1, output2, output3 = model(anchor, pos, question)
+            #loss_triplet = criterion(output1, output2, output3)
+            
+            dist = torch.nn.PairwiseDistance(p=2)
+            dist_pos = dist(output1, output2)
+            dist_neg = dist(output1, output3)
+            print("distance: ", dist_pos, dist_neg)
+            predictions = []
+            labels = []
+            for j in range(output1.shape[0]):
+                labels.append(label[j])
+                if (dist_neg[j] - dist_pos[j] > args.triplet_eval_margin and label[j] == 1):
+                    predictions.append(1)
+                    print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "forgeries", "correct 1")
+                    corr_num += 1
+                    tot_num += 1
+                elif (dist_neg[j] - dist_pos[j] <= args.triplet_eval_margin and label[j] == 0):
+                    print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "authentic", "correct 0")
+                    predictions.append(0)
+                    corr_num += 1
+                    tot_num += 1
+                else:
+                    tot_num += 1
+                    if (label[j] == 1): 
+                        predictions.append(0)
+                        print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "authentic", "incorrect 1")
+                    else:
+                        predictions.append(1)
+                        print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "forgeries", "incorrect 0")
+
+            
+
+    matrix = confusion_matrix(labels, predictions)
+    print(matrix)
+    loss_accum += loss_triplet
+    print('corr_num: {} | tot_num: {}'.format(corr_num, tot_num))
+    return float(corr_num) / tot_num, loss_accum / tot_num
+
 
 def make_conf_matrix(args, testloader, net):
     pred_list = []
@@ -92,6 +140,7 @@ def eval_baseline(args, model, dataloader):
     with torch.no_grad():
         for i, data in enumerate(dataloader, 0):
             img0, img1, label = data
+            img0, img1, label = img0.cuda(), img1.cuda(), label.cuda()
             output1, output2 = model(img0, img1)
             euclidean_distance = F.pairwise_distance(output1, output2)
             predictions = []
@@ -129,19 +178,19 @@ def eval_triplet_valid(args, model, dataloader):
             print("distance: ", dist_pos, dist_neg)
             for j in range(output1.shape[0]):
                 if (dist_neg[j] - dist_pos[j] > args.triplet_eval_margin and label[j] == 1):
-                    print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "forgeries", "correct 1")
+                    #print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "forgeries", "correct 1")
                     corr_num += 1
                     tot_num += 1
                 elif (dist_neg[j] - dist_pos[j] <= args.triplet_eval_margin and label[j] == 0):
-                    print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "authentic", "correct 0")
+                    #print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "authentic", "correct 0")
                     corr_num += 1
                     tot_num += 1
                 else:
                     tot_num += 1
-                    if (label[j] == 1): 
-                        print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "authentic", "incorrect 1")
-                    else: 
-                        print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "forgeries", "incorrect 0")
+                    # if (label[j] == 1): 
+                    #     print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "authentic", "incorrect 1")
+                    # else: 
+                    #     print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "forgeries", "incorrect 0")
                     
         loss_accum += loss_triplet
     print('corr_num: {} | tot_num: {}'.format(corr_num, tot_num))
@@ -155,36 +204,59 @@ def baseline_train(args, sigVerNet, dataloader, eval_dataloader):
 
     # optimizer = optim.RMSprop(sigVerNet.parameters(), lr=args.lr, alpha=0.99, eps=1e-8, weight_decay=0.0005, momentum=0.9)
     optimizer = optim.SGD(sigVerNet.parameters(), lr=args.lr)
-    criterion = ContrastLoss(margin=1.5)
+    criterion = ContrastLoss(margin=args.triplet_margin)
 
     train_loss_list = []
     train_acc_list = []
+    tot_num = 0
+    corr_num = 0
     for epoch in range(0, args.epochs):
+        tot_num = 0
+        corr_num = 0
         for i, data in enumerate(dataloader, 0):
             img0, img1, label = data
-            # img0, img1, label = img0.cuda(), img1.cuda(), label.cuda()
-            img0, img1, label = img0, img1, label
+            img0, img1, label = img0.cuda(), img1.cuda(), label.cuda()
             optimizer.zero_grad()
             output1, output2 = sigVerNet(img0, img1)
             loss_contrastive = criterion(output1, output2, label)
             loss_contrastive.backward()
             optimizer.step()
 
-            print("Epoch number {} batch number {}\n Current loss {}".format(epoch + 1, i + 1, loss_contrastive.item()))
+            euclidean_distance = F.pairwise_distance(output1, output2)
+            predictions = []
+            print("distance: ", euclidean_distance)
+            for j in range(output1.shape[0]):
+                if euclidean_distance[j] > args.baseline_margin:
+                    predictions.append(1)
+                else:
+                    predictions.append(0)
+            print("predictions: ", predictions)
+            for j in range(len(predictions)):
+                if predictions[j] == label[j]:
+                    tot_num += 1
+                    corr_num += 1
+                else:
+                    tot_num += 1
+            running_acc = (corr_num) / tot_num
+
+
+            print("Epoch number {} batch number {}\n Current loss {} running acc {}".format(epoch + 1, i + 1, loss_contrastive.item(), running_acc))
             train_loss_list += [loss_contrastive.item()]
             iteration_number += 10
             counter.append(iteration_number)
             loss_history.append(loss_contrastive.item())
-
-        train_acc = eval_baseline(args, sigVerNet, eval_dataloader)
-        print(" training accuracy {}\n".format(train_acc))
-        train_acc_list += [train_acc]
-    plot_loss_acc(len(train_loss_list), train_loss_list, len(train_acc_list), train_acc_list)
+            if i % 20 == 0 and i != 0:
+              train_acc = eval_baseline(args, sigVerNet, eval_dataloader)
+              train_acc_list += [train_acc]
+              if (train_acc >=0.6): 
+                  torch.save(sigVerNet, '/content/models/triplet_sigVerNet_ep{}_step{}.pt'.format(epoch+1, i+1))
+              #plot_loss_acc(len(train_loss_list), train_loss_list, len(train_acc_list), train_acc_list)
+              print("===============validation acc: ", train_acc)
 
     return sigVerNet
 
 
-def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
+def triplet_train(args, sigVerNet, dataloader, eval_dataloader, eval_dataloader_2):
     batch_train_acc_list = []
     iteration_number = 0
 
@@ -229,11 +301,11 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
 
             for j in range(output1.shape[0]):
                 if (dist_neg[j] - dist_pos[j] > args.triplet_eval_margin):
-                    print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "forgeries")
+                    # print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "forgeries")
                     train_corr_num += 1
                     train_tot_num += 1
                 else:
-                    print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "authentic")
+                    # print("pos, neg, prediction: ", dist_pos[j], dist_neg[j], "authentic")
                     train_tot_num += 1
 
             loss_triplet = criterion(output1, output2, output3)
@@ -244,17 +316,19 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader):
             train_loss = loss_triplet.item()/data[0].shape[0]
 
 
-            if i % 10 == 0 and i != 0:
+            if i % 30 == 0 and i != 0:
                 eval_acc, eval_loss = eval_triplet_valid(args, sigVerNet, eval_dataloader)
-                valid_acc_list += [eval_acc]
-                valid_loss_list += [eval_loss]
+                eval_acc_2, eval_loss_2 = eval_triplet_valid(args, sigVerNet, eval_dataloader_2)
+                valid_acc_list += [eval_acc_2]
+                valid_loss_list += [eval_loss_2]
                 train_acc_list += [train_acc]
                 train_loss_list += [train_loss]
+                print()
+                if (eval_acc >= 0.7 or eval_acc_2 >= 0.7): 
+                    torch.save(sigVerNet, '/content/models/triplet_sigVerNet_ep{}_step{}.pt'.format(epoch+1, i+1))
+            if i % 10 == 0 and i != 0: 
                 plot_loss_acc(len(valid_loss_list), train_loss_list, valid_loss_list, len(valid_acc_list),
                               train_acc_list, valid_acc_list, i)
-
-                if (eval_acc >= 0.7): 
-                    torch.save(sigVerNet, '/content/models/triplet_sigVerNet_ep{}_step{}.pt'.format(epoch+1, i+1))
             print("Epoch number {} batch number {} running loss {} running acc {}".format(epoch + 1, i + 1, loss_triplet.item(), train_acc))
 
         #print("validation accuracy {}\n".format(eval_acc))
@@ -269,11 +343,11 @@ def main():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--batch_size', type=int, default=20)
+    parser.add_argument('--batch_size', type=int, default=5)
     parser.add_argument('--valid_size', type=int, default=4)
     parser.add_argument('--split_coefficient', type=int, default=0.2)
 
-    parser.add_argument('--lr', type=float, default=0.0001)
+    parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--epochs', type=int, default=5)
 
     parser.add_argument('--loss_type', choices=['mse', 'ce'], default='ce')
@@ -282,7 +356,7 @@ def main():
     parser.add_argument('--if_batch', type=bool, default=False)
     parser.add_argument('--num_kernel', type=int, default=30)
     parser.add_argument('--model_type', choices=['small', 'test', 'best', 'best_small'], default='test')
-    parser.add_argument('--baseline_margin', type=float, default=0.75)
+    parser.add_argument('--baseline_margin', type=float, default=0.8)
     parser.add_argument('--triplet_margin', type=float, default=2)
     parser.add_argument('--triplet_eval_margin', type=float, default=0.8)
     parser.add_argument('--computer', type=str, default='google')
@@ -344,17 +418,18 @@ def main():
         # google
         data_base_dir = '/content/'
 
-        baseline_train_csv = "20_overfit_list.csv"
-        baseline_valied_csv = "20_overfit_list.csv"
-        baseline_test_csv = "20_overfit_list.csv"
+        baseline_train_csv = "/content/50k_train_paried_list.csv"
+        baseline_valied_csv = "/content/200_valid_paried_list.csv"
+        baseline_test_csv = "/content/2000_test_paried_list.csv"
 
         # triplet_train_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_train_triplet_list.csv"
         # triplet_valid_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_valid_triplet_list.csv"
         # triplet_test_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_test_triplet_list.csv"
 
-        triplet_train_csv = "/content/50k_train_triplet_list.csv"
-        triplet_valid_csv = "20_valid_triplet_list_diff.csv"
-        triplet_test_csv = "20_valid_triplet_list_diff.csv"
+        triplet_train_csv = "/content/10k_train_triplet_new.csv"
+        triplet_valid_csv = "/content/200_valid_triplet_list.csv"
+        triplet_valid_csv_2 = "/content/200_test_triplet_list_new.csv"
+        triplet_test_csv = "/content/500_test_triplet_list.csv"
 
     elif args.computer == 'yize':
         # yize
@@ -374,29 +449,29 @@ def main():
 
     # define transformer
     sig_transformations = transforms.Compose([
-        transforms.Resize((200, 300)),
+        transforms.Resize((300, 400)),
         transforms.ToTensor()
 
     ])
 
     # data pipeline for siamese
-    siamese_dataset = SiameseNetworkDataset(csv=baseline_train_csv, dir=data_base_dir,
-                                            transform=sig_transformations)
-    baseline_train_dataloader = DataLoader(siamese_dataset,
-                                           shuffle=True,
-                                           batch_size=args.batch_size)
+    # siamese_dataset = SiameseNetworkDataset(csv=baseline_train_csv, dir=data_base_dir,
+    #                                         transform=sig_transformations)
+    # baseline_train_dataloader = DataLoader(siamese_dataset,
+    #                                        shuffle=True,
+    #                                        batch_size=args.batch_size)
 
-    valid_dataset = SiameseNetworkDataset(csv=baseline_valied_csv, dir=data_base_dir,
-                                          transform=sig_transformations)
-    valid_dataloader = DataLoader(siamese_dataset,
-                                  shuffle=True,
-                                  batch_size=args.batch_size)
+    # valid_dataset = SiameseNetworkDataset(csv=baseline_valied_csv, dir=data_base_dir,
+    #                                       transform=sig_transformations)
+    # valid_dataloader = DataLoader(valid_dataset,
+    #                               shuffle=True,
+    #                               batch_size=args.batch_size)
 
-    test_dataset = SiameseNetworkDataset(csv=baseline_test_csv, dir=data_base_dir,
-                                         transform=sig_transformations)
-    test_dataloader = DataLoader(siamese_dataset,
-                                 shuffle=True,
-                                 batch_size=args.batch_size)
+    # test_dataset = SiameseNetworkDataset(csv=baseline_test_csv, dir=data_base_dir,
+    #                                      transform=sig_transformations)
+    # test_dataloader = DataLoader(test_dataset,
+    #                              shuffle=True,
+    #                              batch_size=args.batch_size)
 
     # data pipeline for triplet
     triplet_dataset = TripletDataset(csv=triplet_train_csv, dir=data_base_dir,
@@ -411,44 +486,55 @@ def main():
                                           shuffle=True,
                                           batch_size=args.batch_size)
 
+    triplet_valid_dataset_2 = Triplet_Eval_Dataset(csv=triplet_valid_csv_2, dir=data_base_dir,
+                                                 transform=sig_transformations)
+    triplet_valid_dataloader_2 = DataLoader(triplet_valid_dataset_2,
+                                          shuffle=True,
+                                          batch_size=args.batch_size)                                          
+
     # triplet_test_dataset = Triplet_Eval_Dataset(csv = triplet_test_csv, dir = data_base_dir,
     #                                              transform = sig_transformations)
     # triplet_test_dataloader = DataLoader(triplet_test_dataset,
     #                                       shuffle=True,
-    #                                       batch_size=args.batch_size)
+    #                                       batch_size=5)
 
-    vis_dataloader = DataLoader(triplet_dataset,
-                                shuffle=True,
-                                batch_size=8)
-    dataiter = iter(vis_dataloader)
+    # vis_dataloader = DataLoader(triplet_dataset,
+    #                             shuffle=True,
+    #                             batch_size=8)
+    # dataiter = iter(vis_dataloader)
 
-    example_batch = next(dataiter)
-    concatenated = torch.cat((example_batch[0], example_batch[1], example_batch[2]), 0)
-    imshow(torchvision.utils.make_grid(concatenated))
-    # print(example_batch[3].numpy())
+    # example_batch = next(dataiter)
+    # concatenated = torch.cat((example_batch[0], example_batch[1], example_batch[2]), 0)
+    # imshow(torchvision.utils.make_grid(concatenated))
+    # # print(example_batch[3].numpy())
 
     #sigVerNet = SiameseNetwork()
-    #vggNet = VGG_SiameseNet()
+    #vggNet = VGG_SiameseNet().cuda()
 
 
 
 
     #tripletNet = TripletNetwork()
     #tripletNet = tripletNet.cuda()
-    #vgg_tripletNet = VggTriplet().cuda()
+    vgg_tripletNet = VggTriplet().cuda()
     #vgg_tripletNet = vgg_tripletNet.cuda()
 
 
     # net_after = baseline_train(args, sigVerNet, train_dataloader, eval_dataloader)
-    # net_after = baseline_train(args, vggNet, train_dataloader, eval_dataloader)
-    #trp_after = triplet_train(args, tripletNet, triplet_train_dataloader, triplet_valid_dataloader)
+    # net_after = baseline_train(args, vggNet, baseline_train_dataloader, valid_dataloader)
+    # trp_after = triplet_train(args, tripletNet, triplet_train_dataloader, triplet_valid_dataloader)
 
-    #trp_after = triplet_train(args, vgg_tripletNet, triplet_train_dataloader, triplet_valid_dataloader)
+    trp_after = triplet_train(args, vgg_tripletNet, triplet_train_dataloader, triplet_valid_dataloader, triplet_valid_dataloader_2)
 
 
 
-    model = torch.load("/content/models/triplet_sigVerNet_ep1_step551_71_bs_20_size_200_300.pt")
-    test_acc, test_loss = eval_triplet_valid(args, model, test_dataloader)
+    # model = torch.load("/content/models/triplet_sigVerNet_ep1_step701.pt")
+    # test_acc = eval_baseline(args, model, test_dataloader)
+    # print("test acc: ", test_acc)
+
+    # model = torch.load("/content/triplet_sigVerNet_ep1_step401.pt")
+    # test_acc, test_loss = get_confusion_matrix(args, model, triplet_test_dataloader )
+
 
 
 if __name__ == "__main__":
