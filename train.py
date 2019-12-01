@@ -257,6 +257,8 @@ def baseline_train(args, sigVerNet, dataloader, eval_dataloader):
 
 
 def triplet_train(args, sigVerNet, dataloader, eval_dataloader, eval_dataloader_2):
+    step_counter = 0
+    record_file = "/content/acc_record_file.csv"
     batch_train_acc_list = []
     iteration_number = 0
 
@@ -278,6 +280,7 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader, eval_dataloader_
 
     for epoch in range(0, args.epochs):
         for i, data in enumerate(dataloader, 0):
+            step_counter += 1
             train_corr_num = 0
             train_tot_num = 0
             #concatenated = torch.cat((example_batch[0], example_batch[1], example_batch[2]), 0)
@@ -316,7 +319,7 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader, eval_dataloader_
             train_loss = loss_triplet.item()/data[0].shape[0]
 
 
-            if i % 30 == 0 and i != 0:
+            if i % 20 == 0 and i != 0:
                 eval_acc, eval_loss = eval_triplet_valid(args, sigVerNet, eval_dataloader)
                 eval_acc_2, eval_loss_2 = eval_triplet_valid(args, sigVerNet, eval_dataloader_2)
                 valid_acc_list += [eval_acc_2]
@@ -325,7 +328,8 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader, eval_dataloader_
                 train_loss_list += [train_loss]
                 print("valid acc on cedar: ", eval_acc)
                 print("valid acc on dutch: ", eval_acc_2)
-
+                with open(record_file, 'a') as record: 
+                    record.write(str(step_counter) + ','+ str(eval_acc) + ',' + str(eval_loss.item()) + ',' +  str(eval_acc_2) + ','+ str(eval_loss_2.item()) +  "\n")
                 if (eval_acc >= 0.7 or eval_acc_2 >= 0.7): 
                     torch.save(sigVerNet, '/content/models/triplet_sigVerNet_ep{}_step{}.pt'.format(epoch+1, i+1))
             if i % 10 == 0 and i != 0: 
@@ -432,6 +436,7 @@ def main():
         triplet_valid_csv = "/content/200_valid_triplet_list.csv"
         triplet_valid_csv_2 = "/content/200_test_triplet_list_new.csv"
         triplet_test_csv = "/content/500_test_triplet_list.csv"
+        
 
     elif args.computer == 'yize':
         # yize
