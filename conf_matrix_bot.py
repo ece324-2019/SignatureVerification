@@ -3,7 +3,7 @@ import torch
 from sklearn.metrics import confusion_matrix
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
-from SignatureVerification.sigverDataset import Triplet_Eval_Dataset
+from sigverDataset import Triplet_Eval_Dataset
 
 
 def make_conf_matrix(testloader, net, eval_margin):
@@ -11,6 +11,7 @@ def make_conf_matrix(testloader, net, eval_margin):
     labels_list = []
     for data in testloader:
         img0, img1, img2, label = data
+        img0, img1, img2, label = img0.cuda(), img1.cuda(), img2.cuda(), label.cuda()
         output1, output2, output3 = net(img0, img1, img2)
 
         dist = torch.nn.PairwiseDistance(p=2)
@@ -43,7 +44,7 @@ def main():
     parser.add_argument('--baseline_margin', type=float, default=0.75)
     parser.add_argument('--triplet_margin', type=float, default=2)
     parser.add_argument('--triplet_eval_margin', type=float, default=0.8)
-    parser.add_argument('--computer', type=str, default='terry')
+    parser.add_argument('--computer', type=str, default='google')
     args = parser.parse_args()
 
     if args.computer == 'terry':
@@ -75,7 +76,7 @@ def main():
         # triplet_test_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_test_triplet_list.csv"
 
         triplet_train_csv = "/content/50k_train_triplet_list.csv"
-        triplet_valid_csv = "20_valid_triplet_list_diff.csv"
+        triplet_valid_csv = "/content/500_test_triplet_list_dutch.csv"
         triplet_test_csv = "20_valid_triplet_list_diff.csv"
 
     elif args.computer == 'yize':
@@ -104,8 +105,7 @@ def main():
     triplet_valid_dataloader = DataLoader(triplet_valid_dataset,
                                           shuffle=True,
                                           batch_size=args.batch_size)
-    model = torch.load('D:/1_Study\EngSci_Year3\ECE324_SigVer_project/triplet_sigVerNet_ep1_step401.pt',
-                       map_location=torch.device('cpu'))
+    model = torch.load('/content/models/triplet_sigVerNet_ep1_step441.pt')
 
     print(make_conf_matrix(triplet_valid_dataloader, model, eval_margin=0.8))
 

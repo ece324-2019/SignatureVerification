@@ -322,15 +322,18 @@ def triplet_train(args, sigVerNet, dataloader, eval_dataloader, eval_dataloader_
             if i % 20 == 0 and i != 0:
                 eval_acc, eval_loss = eval_triplet_valid(args, sigVerNet, eval_dataloader)
                 eval_acc_2, eval_loss_2 = eval_triplet_valid(args, sigVerNet, eval_dataloader_2)
-                valid_acc_list += [eval_acc_2]
-                valid_loss_list += [eval_loss_2]
+                valid_acc_list += [eval_acc]
+                valid_loss_list += [eval_loss]
                 train_acc_list += [train_acc]
                 train_loss_list += [train_loss]
                 print("valid acc on cedar: ", eval_acc)
                 print("valid acc on dutch: ", eval_acc_2)
                 with open(record_file, 'a') as record: 
-                    record.write(str(step_counter) + ','+ str(eval_acc) + ',' + str(eval_loss.item()) + ',' +  str(eval_acc_2) + ','+ str(eval_loss_2.item()) +  "\n")
-                if (eval_acc >= 0.7 or eval_acc_2 >= 0.7): 
+                    #record.write(str(step_counter) + ','+ str(eval_acc) + ',' + str(eval_loss.item()) + ',' +  str(eval_acc_2) + ','+ str(eval_loss_2.item()) +  "\n")
+                    record.write(str(step_counter) + ','+ str(eval_acc) + ',' + str(eval_loss.item()) + ',' +  str(eval_acc_2) + ','+ str(eval_loss_2.item()) + ',' +  str(train_acc) + ','+ str(train_loss) +  "\n")
+
+                #if (eval_acc >= 0.7 or eval_acc_2 >= 0.7):
+                if (eval_acc >= 0.7):
                     torch.save(sigVerNet, '/content/models/triplet_sigVerNet_ep{}_step{}.pt'.format(epoch+1, i+1))
             if i % 10 == 0 and i != 0: 
                 plot_loss_acc(len(valid_loss_list), train_loss_list, valid_loss_list, len(valid_acc_list),
@@ -432,9 +435,9 @@ def main():
         # triplet_valid_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_valid_triplet_list.csv"
         # triplet_test_csv = "/Users/yizezhao/PycharmProjects/ece324/sigver/50k_test_triplet_list.csv"
 
-        triplet_train_csv = "/content/10k_train_triplet_new.csv"
-        triplet_valid_csv = "/content/200_valid_triplet_list.csv"
-        triplet_valid_csv_2 = "/content/200_test_triplet_list_new.csv"
+        triplet_train_csv = "/content/20k_train_triplet_cedar_cn.csv"
+        triplet_valid_csv = "/content/200_valid_triplet_list_cedar.csv"
+        triplet_valid_csv_2 = "//content/200_valid_triplet_list_cn.csv"
         triplet_test_csv = "/content/500_test_triplet_list.csv"
         
 
